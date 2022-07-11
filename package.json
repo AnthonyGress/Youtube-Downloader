@@ -1,0 +1,24 @@
+{
+  "name": "youtube-dl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "download-yt.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node download-yt.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnthonyGress/youtube-dl.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AnthonyGress/youtube-dl/issues"
+  },
+  "homepage": "https://github.com/AnthonyGress/youtube-dl#readme",
+  "dependencies": {
+    "youtube-dl-exec": "^2.1.0"
+  }
+}
