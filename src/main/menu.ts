@@ -54,17 +54,17 @@ export default class MenuBuilder {
 
     buildDarwinTemplate(): MenuItemConstructorOptions[] {
         const subMenuAbout: DarwinMenuItemConstructorOptions = {
-            label: 'FireTV Toolkit',
+            label: 'Mac The Ripper',
             submenu: [
                 {
-                    label: 'About FireTV Toolkit',
+                    label: 'About Mac The Ripper',
                     selector: 'orderFrontStandardAboutPanel:',
                 },
                 { type: 'separator' },
                 { label: 'Services', submenu: [] },
                 { type: 'separator' },
                 {
-                    label: 'Hide FireTV Toolkit',
+                    label: 'Hide Mac The Ripper',
                     accelerator: 'Command+H',
                     selector: 'hide:',
                 },
