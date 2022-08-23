@@ -1,5 +1,5 @@
 {
-  "name": "firetv-toolkit",
+  "name": "mac-the-ripper",
   "description": "Electron application boilerplate based on React, React Router, Webpack, React Fast Refresh for rapid application development",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
