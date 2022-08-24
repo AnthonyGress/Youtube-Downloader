@@ -32,7 +32,7 @@ install_yt-dl(){
     echo -e "\n---------------------- Installing yt-dlp ----------------------"
     mkdir /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin
 
-    curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin
+    curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin/yt-dlp
 
     chmod a+rx /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin/yt-dlp
 }
