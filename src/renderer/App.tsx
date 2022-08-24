@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import logo from '../../assets/icons/logo.png';
@@ -12,8 +12,8 @@ declare global {
 
 const Main = () => {
     const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [terminalOutput, setTerminalOutput] = useState('');
-    const outputRef = useRef(null);
+    // const [terminalOutput, setTerminalOutput] = useState('');
+    // const outputRef = useRef(null);
 
     const downloadAudio = async () => {
         window.api.audio(youtubeUrl);
