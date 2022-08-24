@@ -1,6 +1,6 @@
 {
   "name": "mac-the-ripper",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Download audio/video from youtube",
   "main": "./dist/main/main.js",
   "author": {

@@ -18,6 +18,7 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import youtubedl from 'youtube-dl-exec';
+
 export default class AppUpdater {
     constructor() {
         log.transports.file.level = 'info'
