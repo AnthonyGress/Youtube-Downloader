@@ -38,9 +38,9 @@ ipcMain.on('audioChannel', async (event, args) => {
             { format: 'bestaudio[ext=m4a]', output: '~/Downloads/%(title)s.%(ext)s' },
         );
         event.reply('messageResponse', res);
-    } catch (error) {
+    } catch (error: any) {
         console.log(error);
-        event.reply('messageResponse', 'error');
+        event.reply('messageResponse', error.message);
     }
 });
 
@@ -53,9 +53,9 @@ ipcMain.on('videoChannel', async (event, args) => {
         );
         // console.log(res);
         event.reply('messageResponse', res)
-    } catch (error) {
+    } catch (error: any) {
         console.log(error);
-        event.reply('messageResponse', 'error');
+        event.reply('messageResponse', error.message);
     }
 });
 

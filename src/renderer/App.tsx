@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import logo from '../../assets/icons/logo.png';
@@ -12,6 +12,8 @@ declare global {
 
 const Main = () => {
     const [youtubeUrl, setYoutubeUrl] = useState('');
+    const [terminalOutput, setTerminalOutput] = useState('');
+    const outputRef = useRef(null);
 
     const downloadAudio = async () => {
         window.api.audio(youtubeUrl);
@@ -34,7 +36,7 @@ const Main = () => {
 
             stringData = stringData.replace(new RegExp('\\\\n', 'g'), '\n');
             stringData = stringData.slice(1, -1);
-            // setTerminalOutput(stringData);
+            setTerminalOutput(stringData);
         }
     });
 
@@ -84,6 +86,17 @@ const Main = () => {
                         </Button>
                     </div>
                 </Form>
+            </div>
+            <div className="terminal-wrapper center">
+                <div className="output-terminal">
+                    <div className="output-text-box">
+                        <pre className="output-text" ref={outputRef}>
+                            <span className="dollar">$</span>
+                            {terminalOutput}
+                            {/* <span className="blinking">_</span> */}
+                        </pre>
+                    </div>
+                </div>
             </div>
         </main>
     );

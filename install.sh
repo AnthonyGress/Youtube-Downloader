@@ -28,6 +28,15 @@ install_app() {
 
 }
 
+install_yt-dl(){
+    echo -e "\n---------------------- Installing yt-dlp ----------------------"
+    mkdir /Applications/mac-the-ripper.app/Contents/Resources/app.asar/dist/bin
+
+    curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/mac-the-ripper.app/Contents/Resources/app.asar/dist/bin
+
+    chmod a+rx /Applications/mac-the-ripper.app/Contents/Resources/app.asar/dist/bin/yt-dlp
+}
+
 cleanUp(){
     echo -e "\n---------------------- Cleaning Up ----------------------"
 
@@ -54,6 +63,7 @@ echo
 curl https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/assets/art.txt
 install_app
 sleep 2
+install_yt-dl
 openApp
 cleanUp
 
