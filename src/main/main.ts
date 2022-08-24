@@ -38,7 +38,7 @@ ipcMain.on('audioChannel', async (event, args) => {
             url,
             { format: 'bestaudio[ext=m4a]', output: '~/Downloads/%(title)s.%(ext)s' },
         );
-        event.reply('messageResponse', res);
+        event.reply('messageResponse', 'success');
     } catch (error: any) {
         console.log(error);
         event.reply('messageResponse', error.message);
@@ -53,7 +53,7 @@ ipcMain.on('videoChannel', async (event, args) => {
             { format: 'best', output: '~/Downloads/%(title)s.%(ext)s', mergeOutputFormat: 'mp4' },
         );
         // console.log(res);
-        event.reply('messageResponse', res)
+        event.reply('messageResponse', 'success')
     } catch (error: any) {
         console.log(error);
         event.reply('messageResponse', error.message);
@@ -100,7 +100,7 @@ const createWindow = async () => {
 
     mainWindow = new BrowserWindow({
         show: false,
-        width: 512,
+        width: 400,
         height: 780,
         icon: getAssetPath('icon.png'),
         webPreferences: {

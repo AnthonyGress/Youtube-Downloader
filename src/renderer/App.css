@@ -2,18 +2,25 @@
  * @NOTE: Prepend a `~` to css file paths that are in your node_modules
  *        See https://github.com/webpack-contrib/sass-loader#imports
  */
-body {
-    position: relative;
-    color: white;
-    height: 100vh;
+html {
     background: linear-gradient(
         200.96deg,
         #fedc2a -29.09%,
         #dd5789 51.77%,
         #7a2c9e 129.35%
     );
+    background-size: cover;
+    height: 100%;
+}
+body {
+    position: relative;
+    color: white;
     font-family: sans-serif;
     overflow-y: hidden;
+}
+a {
+    text-decoration: none;
+    color: white;
 }
 
 main {
@@ -33,6 +40,7 @@ button {
     cursor: pointer;
     opacity: 0.9;
     margin-right: 10px;
+    margin-left: 10px;
 }
 
 button:hover {
@@ -89,6 +97,20 @@ a:hover {
     align-items: center;
 }
 
+.cell {
+    background-color: rgb(234, 234, 234, 0.8);
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    appearance: none;
+    font-size: 1rem;
+    box-shadow: 0px 8px 28px -6px rgba(24, 39, 75, 0.12),
+        0px 18px 88px -4px rgba(24, 39, 75, 0.14);
+    transition: all ease-in 0.1s;
+    opacity: 0.9;
+    color: black;
+}
+
 .connect {
     display: flex;
     justify-content: center;
@@ -123,6 +145,13 @@ a:hover {
     min-height: 6vh;
 }
 
+.info-btn {
+    position: absolute;
+    display: flex;
+    justify-content: flex-end;
+    top: (92vh);
+}
+
 .splash {
     display: flex;
     flex-direction: column;
@@ -137,7 +166,7 @@ a:hover {
 
 input {
     height: 2rem;
-    min-width: 400px;
+    min-width: 320px;
     border-radius: 8px;
     border-color: transparent;
     appearance: none;
@@ -171,20 +200,13 @@ input {
     font-size: 0.8rem;
 }
 
-.terminal-wrapper {
-    width: 100%;
+.swal2-confirm {
+    background-color: #cf3886 !important;
+    outline: none !important;
 }
 
-#files {
-    min-width: 30vw;
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
-    border-radius: 8px;
-    border-color: transparent;
-    appearance: none;
-    font-size: 1rem;
-    background-color: white;
-    color: black;
+.terminal-wrapper {
+    width: 100%;
 }
 
 .vcenter {
