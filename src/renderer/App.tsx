@@ -87,17 +87,17 @@ const Main = () => {
                     </div>
                 </Form>
             </div>
-            <div className="terminal-wrapper center">
+            {/* <div className="terminal-wrapper center">
                 <div className="output-terminal">
                     <div className="output-text-box">
                         <pre className="output-text" ref={outputRef}>
                             <span className="dollar">$</span>
                             {terminalOutput}
-                            {/* <span className="blinking">_</span> */}
                         </pre>
                     </div>
                 </div>
             </div>
+        */}
         </main>
     );
 };
