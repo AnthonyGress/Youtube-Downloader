@@ -36,7 +36,7 @@ const Main = () => {
 
             stringData = stringData.replace(new RegExp('\\\\n', 'g'), '\n');
             stringData = stringData.slice(1, -1);
-            setTerminalOutput(stringData);
+            // setTerminalOutput(stringData);
         }
     });
 
