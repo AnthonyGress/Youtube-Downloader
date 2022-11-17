@@ -22,3 +22,7 @@ Copy and paste this into the Terminal App
 <hr>
 
 Use the installer under the _Releases_ tab named `mac-the-ripper-${VERSION}.exe`
+
+<hr>
+
+Built using Electron React Boilerplate
