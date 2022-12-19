@@ -24,14 +24,43 @@ const Main = () => {
     // const [terminalOutput, setTerminalOutput] = useState('');
     // const outputRef = useRef(null);
 
+    const isValidUrl = () => {
+        const result = youtubeUrl.includes('youtube.com');
+        return result;
+    };
+
     const downloadAudio = async () => {
-        setLoading(true);
-        window.api.audio(youtubeUrl);
+        if (isValidUrl()) {
+            setLoading(true);
+            window.api.audio(youtubeUrl);
+        } else {
+            Swal.fire({
+                customClass: {
+                    title: 'swal2-title',
+                },
+                title: 'Bad Url!',
+                text: 'Check your Youtube URL and try again.',
+                icon: 'error',
+                confirmButtonText: 'Ok',
+            });
+        }
     };
 
     const downloadVideo = async () => {
-        setLoading(true);
-        window.api.video(youtubeUrl);
+        if (isValidUrl()) {
+            setLoading(true);
+            window.api.video(youtubeUrl);
+        } else {
+            Swal.fire({
+                customClass: {
+                    title: 'swal2-title',
+                },
+                title: 'Bad Url!',
+                text: 'Check your Youtube URL and try again.',
+                icon: 'error',
+                confirmButtonText: 'Ok',
+            });
+        }
     };
 
     window.addEventListener('message', (event: MessageEvent) => {
