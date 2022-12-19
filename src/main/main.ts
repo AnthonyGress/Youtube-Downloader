@@ -28,7 +28,9 @@ if (isWin){
     downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`;
 
     const { exec } = require('child_process');
-    exec(`curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\mac-the-ripper\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
+    console.log('windows setup');
+
+    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\mac-the-ripper\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\mac-the-ripper\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
     })
