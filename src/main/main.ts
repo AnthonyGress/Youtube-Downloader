@@ -19,6 +19,17 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import youtubedl from 'youtube-dl-exec';
 
+const isWin = process.platform === 'win32';
+let username: any;
+let downloadPath: string;
+
+if (isWin){
+    username = process.env.USERNAME;
+    downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`
+} else {
+    downloadPath = '~/Downloads/%(title)s.%(ext)s';
+}
+
 export default class AppUpdater {
     constructor() {
         log.transports.file.level = 'info'
@@ -36,7 +47,7 @@ ipcMain.on('audioChannel', async (event, args) => {
     try {
         const res = await youtubedl(
             url,
-            { format: 'bestaudio[ext=m4a]', output: '~/Downloads/%(title)s.%(ext)s' },
+            { format: 'bestaudio[ext=m4a]', output: downloadPath },
         );
         event.reply('messageResponse', 'success');
     } catch (error: any) {
@@ -48,9 +59,10 @@ ipcMain.on('audioChannel', async (event, args) => {
 ipcMain.on('videoChannel', async (event, args) => {
     const url = args;
     try {
+
         const res = await youtubedl(
             url,
-            { format: 'best', output: '~/Downloads/%(title)s.%(ext)s', mergeOutputFormat: 'mp4' },
+            { format: 'best', output: downloadPath, mergeOutputFormat: 'mp4' },
         );
         // console.log(res);
         event.reply('messageResponse', 'success')
