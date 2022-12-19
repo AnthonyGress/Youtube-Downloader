@@ -15,6 +15,7 @@ A youtube downloader
 Copy and paste this into the Terminal App
 
 `/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"`
+
 <br><br>
 
 ## Windows
