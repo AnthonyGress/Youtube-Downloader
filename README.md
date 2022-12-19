@@ -17,11 +17,13 @@ Copy and paste this into the Terminal App
 `/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"`
 <br><br>
 
-## Windows (Experimental)
+## Windows
 
 <hr>
 
-Use the installer under the _Releases_ tab named `mac-the-ripper-${VERSION}.exe`
+Use the installer from the latest Release named `mac-the-ripper-${VERSION}.exe`
+
+[Click to Download](https://github.com/AnthonyGress/mac-the-ripper/releases/latest/)
 
 <hr>
 
