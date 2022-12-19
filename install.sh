@@ -29,6 +29,7 @@ install_app() {
 }
 
 install_yt-dl(){
+    
     echo -e "\n---------------------- Installing yt-dlp ----------------------"
     mkdir /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin
 

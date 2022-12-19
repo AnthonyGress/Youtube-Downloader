@@ -25,7 +25,13 @@ let downloadPath: string;
 
 if (isWin){
     username = process.env.USERNAME;
-    downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`
+    downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`;
+
+    const { exec } = require('child_process');
+    exec(`curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\mac-the-ripper\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
+    })
 } else {
     downloadPath = '~/Downloads/%(title)s.%(ext)s';
 }
