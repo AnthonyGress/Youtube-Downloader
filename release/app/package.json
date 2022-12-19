@@ -1,11 +1,10 @@
 {
   "name": "mac-the-ripper",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Download audio/video from youtube",
   "main": "./dist/main/main.js",
   "author": {
     "name": "Anthony Gress",
-    "email": "the.techx.guy@gmail.com",
     "url": "https://github.com/AnthonyGress"
   },
   "scripts": {

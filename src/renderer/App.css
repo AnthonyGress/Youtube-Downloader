@@ -52,6 +52,11 @@ button:hover {
 li {
     list-style: none;
 }
+
+img {
+    -webkit-user-drag: none;
+}
+
 h1,
 h2 {
     margin: 10px;
