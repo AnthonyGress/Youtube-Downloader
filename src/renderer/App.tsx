@@ -152,18 +152,10 @@ const Main = () => {
                 </div>
             </div>
         */}
-            <div className="info-btn">
-                <FontAwesomeIcon
-                    icon={faCircleInfo}
-                    className="btn"
-                    onClick={() => {
-                        setShowInfoPage(!showInfoPage);
-                    }}
-                />
-            </div>
+
             {showInfoPage ? (
-                <div id="info-page" style={{ marginTop: '30%' }}>
-                    <div className="button-box cell">
+                <div id="info-page">
+                    <div className="button-group">
                         <div className="center">{`Version: ${packageJson.version}`}</div>
                         <a
                             href="https://anthonygress.dev"
@@ -183,6 +175,15 @@ const Main = () => {
                     </div>
                 </div>
             ) : null}
+            <div className="info-btn">
+                <FontAwesomeIcon
+                    icon={faCircleInfo}
+                    className="btn"
+                    onClick={() => {
+                        setShowInfoPage(!showInfoPage);
+                    }}
+                />
+            </div>
         </main>
     );
 };

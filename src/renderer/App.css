@@ -11,6 +11,7 @@ html {
     );
     background-size: cover;
     height: 100%;
+    user-select: none;
 }
 body {
     position: relative;
