@@ -2,7 +2,7 @@
 OS="$(uname)"
 UNAME_MACHINE="$(/usr/bin/uname -m)"
 USER_PLATFORM="$OS $UNAME_MACHINE"
-LATEST_VERSION=$(curl -s -L https://api.github.com/repos/anthonygress/mac-the-ripper/tags | grep '"name":' | head -1 | cut -d: -f2 | cut -c4-8)
+LATEST_VERSION=$(curl -s -L https://api.github.com/repos/anthonygress/mac-the-ripper/tags | grep '"name":' | head -1 | cut -d: -f2 | cut -c4-9)
 
 install_app() {
     echo -e "\n---------------------- Installing Application ----------------------"
@@ -29,7 +29,7 @@ install_app() {
 }
 
 install_yt-dl(){
-    
+
     echo -e "\n---------------------- Installing yt-dlp ----------------------"
     mkdir /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin
 
