@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faCircleInfo, faRefresh } from '@fortawesome/free-solid-svg-icons';
 import { Bars } from 'react-loader-spinner';
 import Swal from 'sweetalert2';
 import packageJson from '../../release/app/package.json';
@@ -25,8 +25,13 @@ const Main = () => {
     // const outputRef = useRef(null);
 
     const isValidUrl = () => {
-        const result = youtubeUrl.includes('youtube.com');
-        return result;
+        const regex = /^(?!^youtube\.com$|^youtube\.com\/$|^http:\/\/youtube\.com\/$|^https:\/\/youtube\.com\/$).*youtube\.com.*$/;
+
+        if (regex.test(youtubeUrl)){
+            return true;
+        } else {
+            return false;
+        }
     };
 
     const downloadAudio = async () => {
@@ -123,7 +128,7 @@ const Main = () => {
                 <h2>Youtube Downloader</h2>
             </div>
             <div style={{ marginTop: '3rem' }}>
-                <Form onSubmit={downloadAudio}>
+                <Form onSubmit={e => {e.preventDefault(); downloadVideo();}}>
                     <Form.Group
                         className="mb-3 center"
                         controlId="formBasicName"
@@ -139,16 +144,22 @@ const Main = () => {
                         />
                     </Form.Group>
                     {loading ? (
-                        <div className="center">
-                            <Bars
-                                height="80"
-                                width="80"
-                                color="#ffffff"
-                                ariaLabel="bars-loading"
-                                wrapperStyle={{}}
-                                wrapperClass=""
-                                visible={true}
-                            />
+
+                        <div className="center bars">
+                            <div className="center">
+                                <h3>Downloading...</h3>
+                            </div>
+                            <div>
+                                <Bars
+                                    height="80"
+                                    width="80"
+                                    color="#ffffff"
+                                    ariaLabel="bars-loading"
+                                    wrapperStyle={{}}
+                                    wrapperClass=""
+                                    visible={true}
+                                />
+                            </div>
                         </div>
                     ) : (
                         <div className="button-group">
@@ -204,12 +215,19 @@ const Main = () => {
                     </div>
                 </div>
             ) : null}
-            <div className="info-btn">
+            <div className="footer-btns">
                 <FontAwesomeIcon
                     icon={faCircleInfo}
                     className="btn"
                     onClick={() => {
                         setShowInfoPage(!showInfoPage);
+                    }}
+                />
+                <FontAwesomeIcon
+                    icon={faRefresh}
+                    className="btn"
+                    onClick={() => {
+                        location.reload();
                     }}
                 />
             </div>

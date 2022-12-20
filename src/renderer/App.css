@@ -89,6 +89,12 @@ a:hover {
     margin-bottom: 1rem;
 }
 
+.bars {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
 .blinking {
     /* animation: fadein infinite 1s linear; */
     animation: fadeout infinite 1.5s 1.4s ease-in-out;
@@ -151,11 +157,12 @@ a:hover {
     min-height: 6vh;
 }
 
-.info-btn {
-    position: absolute;
+.footer-btns {
+    position:absolute;
     display: flex;
-    justify-content: flex-end;
-    top: (91vh);
+    justify-content: space-between;
+    top: 92vh;
+    width: 100%;
 }
 
 .splash {
