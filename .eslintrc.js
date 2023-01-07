@@ -3,7 +3,7 @@ module.exports = {
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/eslint-recommended',
-        'plugin:@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/recommended'
     ],
     rules: {
         // A temporary hack related to IDE not resolving correct package.json

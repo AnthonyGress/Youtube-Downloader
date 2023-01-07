@@ -90,6 +90,7 @@ const Main = () => {
                     confirmButtonText: 'Ok',
                 });
                 setLoading(false);
+                setYoutubeUrl('');
             } else if (
                 event.data.includes('error') ||
                 event.data.includes('failed')
