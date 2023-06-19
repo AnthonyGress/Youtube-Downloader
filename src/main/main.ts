@@ -30,7 +30,7 @@ if (isWin){
     const { exec } = require('child_process');
     console.log('windows setup');
 
-    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\"Youtube Downloader"\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\"Youtube Downloader"\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
+    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
     })
