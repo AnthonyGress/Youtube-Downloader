@@ -54,17 +54,17 @@ export default class MenuBuilder {
 
     buildDarwinTemplate(): MenuItemConstructorOptions[] {
         const subMenuAbout: DarwinMenuItemConstructorOptions = {
-            label: 'Mac The Ripper',
+            label: 'Youtube Downloader',
             submenu: [
                 {
-                    label: 'About Mac The Ripper',
+                    label: 'About Youtube Downloader',
                     selector: 'orderFrontStandardAboutPanel:',
                 },
                 { type: 'separator' },
                 { label: 'Services', submenu: [] },
                 { type: 'separator' },
                 {
-                    label: 'Hide Mac The Ripper',
+                    label: 'Hide Youtube Downloader',
                     accelerator: 'Command+H',
                     selector: 'hide:',
                 },

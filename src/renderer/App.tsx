@@ -123,10 +123,7 @@ const Main = () => {
                 <img width="200px" src={logo} className="spin" alt="logo" />
             </div>
             <div className="center">
-                <h1>Mac The Ripper</h1>
-            </div>
-            <div className="center">
-                <h2>Youtube Downloader</h2>
+                <h1>Youtube Downloader</h1>
             </div>
             <div style={{ marginTop: '3rem' }}>
                 <Form onSubmit={e => {e.preventDefault(); downloadAudio();}}>

@@ -30,7 +30,7 @@ if (isWin){
     const { exec } = require('child_process');
     console.log('windows setup');
 
-    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\mac-the-ripper\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\mac-the-ripper\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
+    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\"Youtube Downloader"\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\"Youtube Downloader"\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
         console.log(`stdout: ${stdout}`);
         console.log(`stderr: ${stderr}`);
     })
@@ -121,7 +121,7 @@ const createWindow = async () => {
     mainWindow = new BrowserWindow({
         show: false,
         width: 360,
-        height: 640,
+        height: 800,
         icon: getAssetPath('icon.png'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
@@ -138,7 +138,7 @@ const createWindow = async () => {
             mainWindow.minimize();
         } else {
             mainWindow.show();
-            mainWindow.webContents.send('startup', `Welcome to Mac The Ripper version ${app.getVersion()}`)
+            mainWindow.webContents.send('startup', `Welcome to Youtube Downloader version ${app.getVersion()}`)
         }
     });
 
