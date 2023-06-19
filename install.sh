@@ -10,16 +10,16 @@ install_app() {
 
     if [[ "$USER_PLATFORM" == "Darwin arm64" ]]
     then
-        curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/mac-the-ripper-${LATEST_VERSION}-arm64-mac.zip --output ~/Downloads/mac-the-ripper.zip && unzip -qo ~/Downloads/mac-the-ripper.zip -d /Applications
+        curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}-arm64-mac.zip --output ~/Downloads/Youtube-Downloader.zip && unzip -qo ~/Downloads/Youtube-Downloader.zip -d /Applications
     elif [[ "$USER_PLATFORM" == "Darwin x86_64" ]]
     then
-        curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/mac-the-ripper-${LATEST_VERSION}-mac.zip --output ~/Downloads/mac-the-ripper.zip && unzip -qo ~/Downloads/mac-the-ripper.zip -d /Applications
+        curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}-mac.zip --output ~/Downloads/Youtube-Downloader.zip && unzip -qo ~/Downloads/Youtube-Downloader.zip -d /Applications
     elif [[ "$USER_PLATFORM" == "Linux arm64" ]]
     then
-         curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/mac-the-ripper-${LATEST_VERSION}-arm64.AppImage --output ~/Desktop/mac-the-ripper-arm64.AppImage && chmod +x ~/Desktop/mac-the-ripper-arm64.AppImage
+         curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}-arm64.AppImage --output ~/Desktop/Youtube-Downloader-arm64.AppImage && chmod +x ~/Desktop/Youtube-Downloader-arm64.AppImage
     elif [[ "$USER_PLATFORM" == "Linux x86_64" ]]
     then
-         curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/mac-the-ripper-${LATEST_VERSION}.AppImage --output ~/Desktop/mac-the-ripper.AppImage && chmod +x ~/Desktop/mac-the-ripper.AppImage
+         curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}.AppImage --output ~/Desktop/Youtube-Downloader.AppImage && chmod +x ~/Desktop/Youtube-Downloader.AppImage
     else
         echo "OS not supported - please check the readme for install and support instructions"
         exit 1
@@ -31,9 +31,9 @@ install_app() {
 install_yt-dl(){
 
     echo -e "\n---------------------- Installing yt-dlp ----------------------"
-    mkdir /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin
+    mkdir /Applications/Youtube-Downloader.app/Contents/Resources/app/dist/bin
 
-    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin/yt-dlp && chmod a+rx /Applications/mac-the-ripper.app/Contents/Resources/app/dist/bin/yt-dlp
+    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/Youtube-Downloader.app/Contents/Resources/app/dist/bin/yt-dlp && chmod a+rx /Applications/Youtube-Downloader.app/Contents/Resources/app/dist/bin/yt-dlp
 }
 
 cleanUp(){
@@ -41,7 +41,7 @@ cleanUp(){
 
     if [[ "$OS" == "Darwin" ]]
     then
-        rm ~/Downloads/mac-the-ripper.zip
+        rm ~/Downloads/Youtube-Downloader.zip
     fi
 }
 
@@ -50,10 +50,10 @@ echo -e "\n---------------------- Opening App ----------------------"
 
 if [[ "$OS" == "Darwin" ]]
 then
-    open -a mac-the-ripper.app
+    open -a Youtube-Downloader.app
 elif [[ "$OS" == "Linux" ]]
 then
-    cd ~/Desktop && ./mac-the-ripper-arm64.AppImage
+    cd ~/Desktop && ./Youtube-Downloader-arm64.AppImage
 fi
 echo
 }
