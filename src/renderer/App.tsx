@@ -129,7 +129,7 @@ const Main = () => {
                 <h2>Youtube Downloader</h2>
             </div>
             <div style={{ marginTop: '3rem' }}>
-                <Form onSubmit={e => {e.preventDefault(); downloadVideo();}}>
+                <Form onSubmit={e => {e.preventDefault(); downloadAudio();}}>
                     <Form.Group
                         className="mb-3 center"
                         controlId="formBasicName"
