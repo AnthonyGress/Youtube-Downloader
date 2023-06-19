@@ -31,9 +31,9 @@ install_app() {
 install_yt-dl(){
 
     echo -e "\n---------------------- Installing yt-dlp ----------------------"
-    mkdir /Applications/"Youtube Downloader.app"/Contents/Resources/app/dist/bin
+    mkdir /Applications/"Youtube Downloader".app/Contents/Resources/app/dist/bin
 
-    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/Youtube-Downloader.app/Contents/Resources/app/dist/bin/yt-dlp && chmod a+rx /Applications/Youtube-Downloader.app/Contents/Resources/app/dist/bin/yt-dlp
+    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /Applications/"Youtube Downloader".app/Contents/Resources/app/dist/bin/yt-dlp && chmod a+rx /Applications/"Youtube Downloader".app/Contents/Resources/app/dist/bin/yt-dlp
 }
 
 cleanUp(){
