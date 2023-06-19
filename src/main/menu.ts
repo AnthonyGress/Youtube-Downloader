@@ -5,6 +5,7 @@ import {
     BrowserWindow,
     MenuItemConstructorOptions,
 } from 'electron';
+import { platform } from 'os';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -52,6 +53,29 @@ export default class MenuBuilder {
         });
     }
 
+    unixUpdate(): any {
+        const updateMenu = {
+            label: 'Update Youtube Downloader',
+            click: () => {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                const { exec } = require('child_process');
+                console.log('running update');
+                exec('/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"',
+                    (err: string, stdout: string, stderr: string) => {
+                        this.mainWindow.webContents.send('startup', `stdout: ${stdout}`)
+                        this.mainWindow.webContents.send('startup', `stderr: ${stderr}`)
+                        console.log(`stdout: ${stdout}`);
+                        console.log(`stderr: ${stderr}`);
+                    })
+
+            }
+        }
+
+        if (platform() === 'darwin' || platform() === 'linux'){
+            return updateMenu;
+        }
+    }
+
     buildDarwinTemplate(): MenuItemConstructorOptions[] {
         const subMenuAbout: DarwinMenuItemConstructorOptions = {
             label: 'Youtube Downloader',
@@ -60,6 +84,7 @@ export default class MenuBuilder {
                     label: 'About Youtube Downloader',
                     selector: 'orderFrontStandardAboutPanel:',
                 },
+                this.unixUpdate(),
                 { type: 'separator' },
                 { label: 'Services', submenu: [] },
                 { type: 'separator' },

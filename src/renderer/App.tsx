@@ -72,7 +72,7 @@ const Main = () => {
         // event.source === window means the message is coming from the preload
         // script, as opposed to from an <iframe> or other source.
         if (event.source === window) {
-            console.log('from preload:', event.data);
+            console.log('from backend:', event.data);
         }
         if (event.source === window && typeof event.data === 'string') {
             // console.log('from preload:', event.data);

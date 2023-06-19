@@ -72,7 +72,8 @@
           "type": "link",
           "path": "/Applications"
         }
-      ]
+      ],
+      "writeUpdateInfo": false
     },
     "win": {
       "target": [
@@ -94,7 +95,10 @@
     },
     "extraResources": [
       "./assets/**"
-    ]
+    ],
+    "nsis": {
+      "differentialPackage": false
+    }
   },
   "repository": {
     "type": "git",
