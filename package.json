@@ -33,7 +33,7 @@
     ]
   },
   "build": {
-    "productName": "mac-the-ripper",
+    "productName": "Youtube Downloader",
     "appId": "com.techx.mac-the-ripper",
     "asar": false,
     "asarUnpack": [
@@ -228,7 +228,7 @@
     "react-router-dom": "^5.3.0",
     "regenerator-runtime": "^0.13.9",
     "sweetalert2": "^11.4.29",
-    "youtube-dl-exec": "^2.1.5"
+    "youtube-dl-exec": "^2.4.5"
   },
   "devEngines": {
     "node": ">=14.x",
