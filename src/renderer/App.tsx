@@ -79,6 +79,34 @@ const Main = () => {
             let stringData = JSON.stringify(event.data);
             console.log('this is event.data', event.data);
 
+            if (event.data.includes('starting update')){
+                Swal.fire({
+                    customClass: {
+                        title: 'swal2-title',
+                    },
+                    title: 'Updating',
+                    text: 'The update is in progress, please wait...',
+                    icon: 'info',
+                    confirmButtonText: 'Ok',
+                });
+            }
+
+            if (event.data.includes('update complete')){
+                Swal.fire({
+                    customClass: {
+                        title: 'swal2-title',
+                    },
+                    title: 'Done!',
+                    text: 'Update successful! Please restart the app.',
+                    icon: 'success',
+                    confirmButtonText: 'Restart',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.api.coms('restart');
+                    }
+                })
+            }
+
             if (event.data === 'success') {
                 Swal.fire({
                     customClass: {

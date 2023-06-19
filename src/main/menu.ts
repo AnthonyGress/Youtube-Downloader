@@ -60,6 +60,7 @@ export default class MenuBuilder {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
                 const { exec } = require('child_process');
                 console.log('running update');
+                this.mainWindow.webContents.send('startup', 'starting update');
                 exec('/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"',
                     (err: string, stdout: string, stderr: string) => {
                         this.mainWindow.webContents.send('startup', `stdout: ${stdout}`)
@@ -67,7 +68,7 @@ export default class MenuBuilder {
                         console.log(`stdout: ${stdout}`);
                         console.log(`stderr: ${stderr}`);
                     })
-
+                this.mainWindow.webContents.send('startup', 'update complete');
             }
         }
 

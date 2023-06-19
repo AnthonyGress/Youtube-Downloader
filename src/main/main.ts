@@ -80,6 +80,21 @@ ipcMain.on('videoChannel', async (event, args) => {
     }
 });
 
+ipcMain.on('communicationChannel', async (event, args) => {
+    console.log('hit coms');
+
+    try {
+        if (args.includes('restart')){
+            event.reply('messageResponse', 'restarting');
+            app.relaunch();
+            app.exit();
+        }
+    } catch (error: any) {
+        console.log(error);
+        event.reply('messageResponse', error.message);
+    }
+});
+
 if (process.env.NODE_ENV === 'production') {
     const sourceMapSupport = require('source-map-support');
     sourceMapSupport.install();

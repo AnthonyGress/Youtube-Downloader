@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const WINDOW_API = {
     audio: (args) => ipcRenderer.send('audioChannel', args),
     video: (args) => ipcRenderer.send('videoChannel', args),
+    coms: (args) => ipcRenderer.send('communicationChannel', args),
 };
 
 const windowLoaded = new Promise((resolve) => {
