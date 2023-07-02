@@ -2,7 +2,9 @@
 OS="$(uname)"
 UNAME_MACHINE="$(/usr/bin/uname -m)"
 USER_PLATFORM="$OS $UNAME_MACHINE"
-LATEST_VERSION=$(curl -s -L https://api.github.com/repos/anthonygress/mac-the-ripper/tags | grep '"name":' | head -1 | cut -d: -f2 | cut -c4-9)
+LATEST_VERSION_URL=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AnthonyGress/Youtube-Downloader/releases/latest)
+LATEST_VERSION=$(basename $LATEST_VERSION_URL)
+LATEST_VERSION="${LATEST_VERSION:1}"
 
 install_app() {
     echo -e "\n---------------------- Installing Application ----------------------"
@@ -50,10 +52,10 @@ echo -e "\n---------------------- Opening App ----------------------"
 
 if [[ "$OS" == "Darwin" ]]
 then
-    open -a "Youtube Downloader".app
+    open -a /Applications/"Youtube Downloader.app"
 elif [[ "$OS" == "Linux" ]]
 then
-    cd ~/Desktop && ./Youtube-Downloader-arm64.AppImage
+    cd ~/Desktop && ./Youtube-Downloader.AppImage
 fi
 echo
 }
