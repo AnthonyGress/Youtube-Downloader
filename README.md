@@ -15,7 +15,7 @@ Copy and paste this into the Terminal App
 
 ## Windows
 
-Use the installer from the latest Release named `mac-the-ripper-${VERSION}.exe`
+Use the installer from the latest Release named `Youtube-Downloader-Setup-${VERSION}.exe`
 
 [Click to Download](https://github.com/AnthonyGress/mac-the-ripper/releases/latest/)
 
