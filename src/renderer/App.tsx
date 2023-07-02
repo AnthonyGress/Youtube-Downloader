@@ -171,10 +171,10 @@ const Main = () => {
                 className="center"
                 style={{ marginTop: '2rem', marginBottom: '1rem' }}
             >
-                <img width="200px" src={logo} className="spin" alt="logo" />
+                <img width="175px" src={logo} className="spin" alt="logo" />
             </div>
             <div className="center">
-                <h1>Youtube Downloader</h1>
+                <h1 style={{fontSize: '1.75rem'}}>Youtube Downloader</h1>
             </div>
             <div style={{ marginTop: '3rem' }}>
                 <Form onSubmit={e => {e.preventDefault(); downloadAudio();}}>
