@@ -80,6 +80,10 @@ a:hover {
     text-decoration: none;
 }
 
+.btn {
+    cursor: pointer;
+}
+
 .button-group {
     display: flex;
     flex-direction: row;
