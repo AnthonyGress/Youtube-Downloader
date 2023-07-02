@@ -5,25 +5,39 @@ A simple cross platform youtube downloader for Mac, Windows, and Linux computers
 
 # Install
 
-<br>
-
 ## Mac & Linux
-
-<hr>
 
 Copy and paste this into the Terminal App
 
 `/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"`
 
-<br><br>
+<br>
 
 ## Windows
-
-<hr>
 
 Use the installer from the latest Release named `mac-the-ripper-${VERSION}.exe`
 
 [Click to Download](https://github.com/AnthonyGress/mac-the-ripper/releases/latest/)
+
+<br>
+
+## Usage
+
+Simply input a youtube url and click a download button. For now, the files will always output to your downloads folder.
+
+For CSV files, the file needs to look like this
+
+`example.csv`
+```
+https://www.youtube.com/watch?v=Axd3LP1k6NI,
+https://www.youtube.com/watch?v=ggrhOD24tFQ,
+https://www.youtube.com/watch?v=-95EAvUfJos,
+https://www.youtube.com/watch?v=P13hELgxJHw,
+```
+
+> NOTE: **There must be a comma on the last line or it will throw and error**
+
+<br>
 
 <hr>
 

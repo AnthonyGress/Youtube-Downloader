@@ -6,7 +6,8 @@ export const parseAndDownload = async (filepath: string, downloadAction: (url: s
 
     // Initialize the parser
     const parser = parse({
-        delimiter: ','
+        delimiter: ',',
+        skip_empty_lines: true,
     });
 
     // Use the readable stream api to consume records
