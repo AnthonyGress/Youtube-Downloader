@@ -6,6 +6,10 @@ import {
     MenuItemConstructorOptions,
 } from 'electron';
 import { platform } from 'os';
+import util from 'node:util';
+import { exec } from 'node:child_process';
+
+const execPromise = util.promisify(exec);
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -56,18 +60,10 @@ export default class MenuBuilder {
     unixUpdate(): any {
         const updateMenu = {
             label: 'Update Youtube Downloader',
-            click: () => {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                const { exec } = require('child_process');
+            click: async () => {
                 console.log('running update');
                 this.mainWindow.webContents.send('startup', 'starting update');
-                exec('/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"',
-                    (err: string, stdout: string, stderr: string) => {
-                        this.mainWindow.webContents.send('startup', `stdout: ${stdout}`)
-                        this.mainWindow.webContents.send('startup', `stderr: ${stderr}`)
-                        console.log(`stdout: ${stdout}`);
-                        console.log(`stderr: ${stderr}`);
-                    })
+                await execPromise('/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"')
                 this.mainWindow.webContents.send('startup', 'update complete');
             }
         }
