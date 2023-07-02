@@ -40,6 +40,7 @@ const Main = () => {
             setLoading(true);
             window.api.audio(youtubeUrl);
         } else if (selectedFile) {
+            setLoading(true);
             window.api.audio({file: selectedFile.path});
         }
         else {
@@ -60,6 +61,7 @@ const Main = () => {
             setLoading(true);
             window.api.video(youtubeUrl);
         } else if (selectedFile) {
+            setLoading(true);
             window.api.video({file: selectedFile.path});
         } else {
             Swal.fire({
