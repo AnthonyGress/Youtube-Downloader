@@ -18,10 +18,12 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import youtubedl from 'youtube-dl-exec';
+import { parseAndDownload } from './parseCSV';
 
 const isWin = process.platform === 'win32';
 let username: any;
 let downloadPath: string;
+let bulkFilepath: string;
 
 if (isWin){
     username = process.env.USERNAME;
@@ -38,6 +40,21 @@ if (isWin){
     downloadPath = '~/Downloads/%(title)s.%(ext)s';
 }
 
+const setDownloadPath = (folderName?: string, bulk?: boolean) => {
+    if (isWin) {
+        if (bulk) {
+            downloadPath = `C:\\Users\\${username}\\Downloads\\${folderName}\\%(title)s.%(ext)s`;
+        } else {
+            downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`;
+        }
+    } else {
+        if (bulk) {
+            downloadPath = `~/Downloads/${folderName}/%(title)s.%(ext)s`;
+        } else {
+            downloadPath = '~/Downloads/%(title)s.%(ext)s';
+        }
+    }
+}
 export default class AppUpdater {
     constructor() {
         log.transports.file.level = 'info'
@@ -49,34 +66,100 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-// listen for message from renderer
-ipcMain.on('audioChannel', async (event, args) => {
-    const url = args;
+const downloadAudio = async (url: string) => {
     try {
         const res = await youtubedl(
             url,
             { format: 'bestaudio[ext=m4a]', output: downloadPath },
         );
-        event.reply('messageResponse', 'success');
+        return true;
     } catch (error: any) {
         console.log(error);
-        event.reply('messageResponse', error.message);
+        return error.message;
     }
-});
+}
 
-ipcMain.on('videoChannel', async (event, args) => {
-    const url = args;
+const downloadVideo = async (url: string) => {
     try {
-
         const res = await youtubedl(
             url,
             { format: 'best', output: downloadPath, mergeOutputFormat: 'mp4' },
         );
-        // console.log(res);
-        event.reply('messageResponse', 'success')
+        return true;
     } catch (error: any) {
         console.log(error);
-        event.reply('messageResponse', error.message);
+        return error.message;
+    }
+}
+
+// listen for message from renderer
+ipcMain.on('audioChannel', async (event, args) => {
+    const url = args;
+    console.log(args);
+    let downloadResponse: any;
+
+    const notifyComplete = (response: any) => {
+        console.log(response);
+
+        if (response === true) {
+            event.reply('messageResponse', 'success');
+        } else {
+            if (response.urlsRejected) {
+                event.reply('messageResponse', {urlsRejected: response.urlsRejected});
+            }
+            else {
+                event.reply('messageResponse', response);
+            }
+        }
+    }
+
+    if (typeof args === 'string') {
+        setDownloadPath()
+        downloadResponse = await downloadAudio(url)
+        notifyComplete(downloadResponse);
+    } else {
+        bulkFilepath = args.file
+        const bulk = true;
+        if (bulkFilepath) {
+            setDownloadPath('Youtube_Music_Downloads', bulk)
+            parseAndDownload(bulkFilepath, downloadAudio, notifyComplete );
+        }
+    }
+
+
+});
+
+ipcMain.on('videoChannel', async (event, args) => {
+    const url = args;
+    console.log(args);
+    let downloadResponse: any;
+
+    const notifyComplete = (response: any) => {
+        console.log(response);
+
+        if (response === true) {
+            event.reply('messageResponse', 'success');
+        } else {
+            if (response.urlsRejected) {
+                event.reply('messageResponse', {urlsRejected: response.urlsRejected});
+            }
+            else {
+                event.reply('messageResponse', response);
+            }
+        }
+    }
+
+    if (typeof args === 'string') {
+        setDownloadPath()
+        downloadResponse = await downloadVideo(url)
+        notifyComplete(downloadResponse);
+    } else {
+        bulkFilepath = args.file
+        const bulk = true;
+        if (bulkFilepath) {
+            setDownloadPath('Youtube_Video_Downloads', bulk)
+            parseAndDownload(bulkFilepath, downloadVideo, notifyComplete );
+        }
     }
 });
 

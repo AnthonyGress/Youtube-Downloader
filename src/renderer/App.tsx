@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleInfo, faRefresh } from '@fortawesome/free-solid-svg-icons';
+import { faCircleInfo, faRefresh, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { Bars } from 'react-loader-spinner';
+import { Box } from '@mui/material';
 import Swal from 'sweetalert2';
 import packageJson from '../../release/app/package.json';
 
@@ -20,9 +21,9 @@ const Main = () => {
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const [showInfoPage, setShowInfoPage] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<any>('');
 
-    // const [terminalOutput, setTerminalOutput] = useState('');
-    // const outputRef = useRef(null);
+    const inputRef = useRef<any>();
 
     const isValidUrl = () => {
         const regex = /^(?!^youtube\.com$|^youtube\.com\/$|^http:\/\/youtube\.com\/$|^https:\/\/youtube\.com\/$).*youtube\.com.*$/;
@@ -38,7 +39,11 @@ const Main = () => {
         if (isValidUrl()) {
             setLoading(true);
             window.api.audio(youtubeUrl);
-        } else {
+        } else if (selectedFile) {
+            setLoading(true);
+            window.api.audio({file: selectedFile.path});
+        }
+        else {
             Swal.fire({
                 customClass: {
                     title: 'swal2-title',
@@ -55,6 +60,9 @@ const Main = () => {
         if (isValidUrl()) {
             setLoading(true);
             window.api.video(youtubeUrl);
+        } else if (selectedFile) {
+            setLoading(true);
+            window.api.video({file: selectedFile.path});
         } else {
             Swal.fire({
                 customClass: {
@@ -71,14 +79,31 @@ const Main = () => {
     window.addEventListener('message', (event: MessageEvent) => {
         // event.source === window means the message is coming from the preload
         // script, as opposed to from an <iframe> or other source.
-        if (event.source === window) {
+        if (event.source === window && !event.data.source && !event.data.type) {
             console.log('from backend:', event.data);
         }
-        if (event.source === window && typeof event.data === 'string') {
-            // console.log('from preload:', event.data);
-            let stringData = JSON.stringify(event.data);
-            console.log('this is event.data', event.data);
 
+        if (event.data.urlsRejected) {
+            const urls = event.data.urlsRejected;
+            let errorString = '';
+
+            urls.map((url: string) => {
+                errorString += `${url} <br />`
+            })
+
+
+            Swal.fire({
+                customClass: {
+                    title: 'swal2-title',
+                },
+                title: 'Finished with Errors!',
+                html: `${urls.length} URLs failed <br/><br/> <div style="text-align: left;">${errorString}</div>`,
+                icon: 'error',
+                confirmButtonText: 'Ok',
+            });
+            setLoading(false);
+        }
+        if (event.source === window && typeof event.data === 'string') {
             if (event.data.includes('starting update')){
                 Swal.fire({
                     customClass: {
@@ -113,12 +138,15 @@ const Main = () => {
                         title: 'swal2-title',
                     },
                     title: 'Success!',
-                    text: 'Thank you for using Mac the Ripper! Your file is in the Downloads folder.',
+                    text: 'Done! Your files are in the Downloads folder.',
                     icon: 'success',
                     confirmButtonText: 'Ok',
                 });
                 setLoading(false);
                 setYoutubeUrl('');
+                inputRef.current.value = null
+                setSelectedFile('');
+
             } else if (
                 event.data.includes('error') ||
                 event.data.includes('failed')
@@ -134,11 +162,6 @@ const Main = () => {
                 });
                 setLoading(false);
             }
-            // console.log(stringData);
-
-            stringData = stringData.replace(new RegExp('\\\\n', 'g'), '\n');
-            stringData = stringData.slice(1, -1);
-            // setTerminalOutput(stringData);
         }
     });
 
@@ -188,22 +211,58 @@ const Main = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="button-group">
-                            <Button
-                                size="lg"
-                                className="w-75 dl-btn"
-                                onClick={() => downloadAudio()}
-                            >
+                        <>
+                            <div className="button-group">
+                                <Button
+                                    size="lg"
+                                    className="w-75 dl-btn"
+                                    onClick={() => downloadAudio()}
+                                >
                                 Download Audio
-                            </Button>
-                            <Button
-                                size="lg"
-                                className="w-75 dl-btn"
-                                onClick={() => downloadVideo()}
-                            >
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    className="w-75 dl-btn"
+                                    onClick={() => downloadVideo()}
+                                >
                                 Download Video
-                            </Button>
-                        </div>
+                                </Button>
+                            </div>
+                            <div className='center'>
+                                <input
+                                    onChange={(e: any) =>{
+                                        setSelectedFile(e.currentTarget.files[0])
+                                    }}
+                                    type="file"
+                                    id="files"
+                                    name="files"
+                                    className="form-control"
+                                    accept='.csv'
+                                    ref={inputRef}
+                                    style={{ display: 'none' }}
+                                />
+
+                                <Box mt={2}>
+                                    <Button
+                                        onClick={() => inputRef.current.click()}
+                                        style={{maxWidth: 150}}>{'Select File'}
+                                    </Button>
+                                </Box>
+                                <Box mt={2}>{selectedFile ? `${selectedFile.name}` : 'No File Selected'}</Box>
+                                <Box mt={2} ml={2}>
+                                    <FontAwesomeIcon
+                                        icon={faTimes}
+                                        className="btn"
+                                        size='lg'
+                                        onClick={() => {
+                                            inputRef.current.value = null;
+                                            setSelectedFile('');
+                                        }}
+                                    />
+                                </Box>
+                            </div>
+                        </>
+
                     )}
                 </Form>
             </div>
