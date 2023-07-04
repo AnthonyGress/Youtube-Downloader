@@ -55,6 +55,7 @@ li {
 
 img {
     -webkit-user-drag: none;
+    user-select: none;
 }
 
 h1,
@@ -78,6 +79,14 @@ a {
 a:hover {
     opacity: 1;
     text-decoration: none;
+}
+
+h1, button, div {
+    user-select: none;
+}
+
+#swal2-html-container {
+    user-select: all;
 }
 
 .btn {
