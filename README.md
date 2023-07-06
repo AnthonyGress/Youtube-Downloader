@@ -35,7 +35,7 @@ https://www.youtube.com/watch?v=-95EAvUfJos,
 https://www.youtube.com/watch?v=P13hELgxJHw,
 ```
 
-> NOTE: **There must be a comma on the last line or it will throw and error**
+> NOTE: **On Mac it seems, There must be a comma on the last line or it will throw and error**
 
 <br>
 
