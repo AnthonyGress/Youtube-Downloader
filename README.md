@@ -32,10 +32,10 @@ For CSV files, the file needs to look like this
 https://www.youtube.com/watch?v=Axd3LP1k6NI,
 https://www.youtube.com/watch?v=ggrhOD24tFQ,
 https://www.youtube.com/watch?v=-95EAvUfJos,
-https://www.youtube.com/watch?v=P13hELgxJHw,
+https://www.youtube.com/watch?v=P13hELgxJHw
 ```
 
-> NOTE: **On Mac it seems, There must be a comma on the last line or it will throw and error**
+> NOTE: **On Mac it seems, There must be a comma at the end of the last line or it will throw an error**
 
 <br>
 
