@@ -13,9 +13,23 @@ install_app() {
     if [[ "$USER_PLATFORM" == "Darwin arm64" ]]
     then
         curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}-arm64-mac.zip --output ~/Downloads/Youtube-Downloader.zip && unzip -qo ~/Downloads/Youtube-Downloader.zip -d /Applications
+
+        if ! command -v brew &> /dev/null; then
+            echo "Homebrew not installed, installing"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+
+        brew install ffmpeg
     elif [[ "$USER_PLATFORM" == "Darwin x86_64" ]]
     then
         curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}-mac.zip --output ~/Downloads/Youtube-Downloader.zip && unzip -qo ~/Downloads/Youtube-Downloader.zip -d /Applications
+
+        if ! command -v brew &> /dev/null; then
+            echo "Homebrew not installed, installing"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+
+        brew install ffmpeg
     elif [[ "$USER_PLATFORM" == "Linux arm64" ]]
     then
          curl -sL https://github.com/AnthonyGress/mac-the-ripper/releases/download/v${LATEST_VERSION}/Youtube-Downloader-${LATEST_VERSION}-arm64.AppImage --output ~/Desktop/Youtube-Downloader-arm64.AppImage && chmod +x ~/Desktop/Youtube-Downloader-arm64.AppImage
@@ -26,8 +40,6 @@ install_app() {
         echo "OS not supported - please check the readme for install and support instructions"
         exit 1
     fi
-
-
 }
 
 install_yt-dl(){
