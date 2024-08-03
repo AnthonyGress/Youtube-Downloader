@@ -4,12 +4,13 @@ import { Form, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleInfo, faRefresh, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { Bars } from 'react-loader-spinner';
-import { Box } from '@mui/material';
+import { Box, FormControlLabel, Typography } from '@mui/material';
 import Swal from 'sweetalert2';
 import packageJson from '../../release/app/package.json';
 
 import logo from '../../assets/icons/logo.png';
 import './App.css';
+import { Toggle } from './Toggle';
 
 declare global {
     interface Window {
@@ -21,6 +22,7 @@ const Main = () => {
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const [showInfoPage, setShowInfoPage] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [checked, setChecked] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>('');
 
     const inputRef = useRef<any>();
@@ -38,7 +40,7 @@ const Main = () => {
     const downloadAudio = async () => {
         if (isValidUrl()) {
             setLoading(true);
-            window.api.audio(youtubeUrl);
+            window.api.audio({url: youtubeUrl});
         } else if (selectedFile) {
             setLoading(true);
             window.api.audio({file: selectedFile.path});
@@ -57,12 +59,13 @@ const Main = () => {
     };
 
     const downloadVideo = async () => {
+        const bestQuality = checked
         if (isValidUrl()) {
             setLoading(true);
-            window.api.video(youtubeUrl);
+            window.api.video({url: youtubeUrl, bestQuality: bestQuality});
         } else if (selectedFile) {
             setLoading(true);
-            window.api.video({file: selectedFile.path});
+            window.api.video({file: selectedFile.path, bestQuality: bestQuality});
         } else {
             Swal.fire({
                 customClass: {
@@ -228,7 +231,20 @@ const Main = () => {
                                 Download Video
                                 </Button>
                             </div>
-                            <div className='center'>
+                            <div className="center">
+                                <FormControlLabel
+                                    control={ <Toggle
+                                        checked={checked}
+                                        onChange={() => setChecked(!checked)}
+                                        inputProps={{ 'aria-label': 'controlled' }}
+                                        sx={{ m: 1 }}
+                                    />
+                                    }
+                                    label='Best Quality'
+                                />
+
+                            </div>
+                            <Box className='center' mt={6}>
                                 <input
                                     onChange={(e: any) =>{
                                         setSelectedFile(e.currentTarget.files[0])
@@ -260,6 +276,9 @@ const Main = () => {
                                         }}
                                     />
                                 </Box>
+                            </Box>
+                            <div className="center">
+                                <Typography fontSize={12} mt={1}>CSV of YouTube URLs</Typography>
                             </div>
                         </>
 

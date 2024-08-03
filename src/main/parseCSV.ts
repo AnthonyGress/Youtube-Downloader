@@ -1,7 +1,7 @@
 import { parse } from 'csv-parse';
 import fs from 'fs';
 
-export const parseAndDownload = async (filepath: string, downloadAction: (url: string) => any, callback: any) => {
+export const parseAndDownload = async (filepath: string, bestQuality: boolean, downloadAction: (url: string, bestQuality?: boolean) => any, callback: any) => {
     const records: string[] = [];
 
     // Initialize the parser
@@ -26,7 +26,7 @@ export const parseAndDownload = async (filepath: string, downloadAction: (url: s
 
         Promise.all(records.map(async (url) => {
             try {
-                const response = await downloadAction(url)
+                const response = await downloadAction(url, bestQuality)
                 if (response !== true) {
                     errorsArr.push(url);
                 }
