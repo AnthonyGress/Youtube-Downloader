@@ -20,7 +20,7 @@ jobs:
       - name: Install Node and NPM
         uses: actions/setup-node@v1
         with:
-          node-version: 20
+          node-version: 18
 
       - name: Install dependencies
         run: |
