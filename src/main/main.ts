@@ -17,7 +17,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import youtubedl from 'youtube-dl-exec';
+import youtubedl, { Flags } from 'youtube-dl-exec';
 import { parseAndDownload } from './parseCSV';
 
 const isWin = process.platform === 'win32';
@@ -66,7 +66,7 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-const downloadAudio = async (url: string) => {
+const downloadAudio = async (url: string, bestQuality = false) => {
     try {
         const res = await youtubedl(
             url,
@@ -79,12 +79,21 @@ const downloadAudio = async (url: string) => {
     }
 }
 
-const downloadVideo = async (url: string) => {
+const downloadVideo = async (url: string, bestQuality = false) => {
     try {
+        console.log(`################### best quality ${bestQuality}`);
+
+        const goodFormat = { format: 'bv*[height<=1080][vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b', output: downloadPath, mergeOutputFormat: 'mp4', forceOverwrites: true}
+
+        const bestFormat = { format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', output: downloadPath, mergeOutputFormat: 'mp4', forceOverwrites: true}
+
+        const format = bestQuality ? bestFormat : goodFormat
+
         const res = await youtubedl(
             url,
-            { format: 'best', output: downloadPath, mergeOutputFormat: 'mp4' },
+            format
         );
+
         return true;
     } catch (error: any) {
         console.log(error);
@@ -94,7 +103,8 @@ const downloadVideo = async (url: string) => {
 
 // listen for message from renderer
 ipcMain.on('audioChannel', async (event, args) => {
-    const url = args;
+    const url = args.url;
+    const bestQuality = false
     console.log(args);
     let downloadResponse: any;
 
@@ -113,7 +123,7 @@ ipcMain.on('audioChannel', async (event, args) => {
         }
     }
 
-    if (typeof args === 'string') {
+    if (url) {
         setDownloadPath()
         downloadResponse = await downloadAudio(url)
         notifyComplete(downloadResponse);
@@ -122,7 +132,7 @@ ipcMain.on('audioChannel', async (event, args) => {
         const bulk = true;
         if (bulkFilepath) {
             setDownloadPath('Youtube_Music_Downloads', bulk)
-            parseAndDownload(bulkFilepath, downloadAudio, notifyComplete );
+            parseAndDownload(bulkFilepath, bestQuality, downloadAudio, notifyComplete );
         }
     }
 
@@ -130,8 +140,9 @@ ipcMain.on('audioChannel', async (event, args) => {
 });
 
 ipcMain.on('videoChannel', async (event, args) => {
-    const url = args;
-    console.log(args);
+    const url = args.url;
+    const bestQuality = args.bestQuality
+    console.log('args', args);
     let downloadResponse: any;
 
     const notifyComplete = (response: any) => {
@@ -149,16 +160,16 @@ ipcMain.on('videoChannel', async (event, args) => {
         }
     }
 
-    if (typeof args === 'string') {
+    if (url) {
         setDownloadPath()
-        downloadResponse = await downloadVideo(url)
+        downloadResponse = await downloadVideo(url, bestQuality)
         notifyComplete(downloadResponse);
     } else {
         bulkFilepath = args.file
         const bulk = true;
         if (bulkFilepath) {
             setDownloadPath('Youtube_Video_Downloads', bulk)
-            parseAndDownload(bulkFilepath, downloadVideo, notifyComplete );
+            parseAndDownload(bulkFilepath, bestQuality, downloadVideo, notifyComplete );
         }
     }
 });
