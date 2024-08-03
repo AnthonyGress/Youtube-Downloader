@@ -17,7 +17,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import youtubedl, { Flags } from 'youtube-dl-exec';
+import youtubedl from 'youtube-dl-exec';
 import { parseAndDownload } from './parseCSV';
 
 const isWin = process.platform === 'win32';
