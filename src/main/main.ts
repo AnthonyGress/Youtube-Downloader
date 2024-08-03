@@ -83,9 +83,9 @@ const downloadVideo = async (url: string, bestQuality = false) => {
     try {
         console.log(`################### best quality ${bestQuality}`);
 
-        const goodFormat = { format: 'bv*[height<=1080][vcodec^=avc]+ba[ext=m4a]/best', output: downloadPath, mergeOutputFormat: 'mp4'}
+        const goodFormat = { format: 'bv*[height<=1080][vcodec^=avc]+ba[ext=m4a]/best', output: downloadPath, mergeOutputFormat: 'mp4', ffmpegLocation: '/opt/homebrew/bin/ffmpeg'}
 
-        const bestFormat = { format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best', output: downloadPath, mergeOutputFormat: 'mp4'}
+        const bestFormat = { format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best', output: downloadPath, mergeOutputFormat: 'mp4', ffmpegLocation: '/opt/homebrew/bin/ffmpeg'}
 
         const format = bestQuality ? bestFormat : goodFormat
 
