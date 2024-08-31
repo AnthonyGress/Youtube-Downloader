@@ -19,7 +19,7 @@ declare global {
 }
 
 const Main = () => {
-    const [youtubeUrl, setYoutubeUrl] = useState('');
+    const [url, setUrl] = useState('');
     const [showInfoPage, setShowInfoPage] = useState(false);
     const [loading, setLoading] = useState(false);
     const [checked, setChecked] = useState(false);
@@ -28,9 +28,9 @@ const Main = () => {
     const inputRef = useRef<any>();
 
     const isValidUrl = () => {
-        const regex = /^(?!^youtube\.com$|^youtube\.com\/$|^http:\/\/youtube\.com\/$|^https:\/\/youtube\.com\/$).*youtube\.com.*$/;
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|.+\?v=)|youtu\.be\/|instagram\.com\/(?:p\/|reel\/|tv\/|stories\/)?)[\w-]+/i;
 
-        if (regex.test(youtubeUrl)){
+        if (regex.test(url)){
             return true;
         } else {
             return false;
@@ -40,7 +40,7 @@ const Main = () => {
     const downloadAudio = async () => {
         if (isValidUrl()) {
             setLoading(true);
-            window.api.audio({url: youtubeUrl});
+            window.api.audio({url: url});
         } else if (selectedFile) {
             setLoading(true);
             window.api.audio({file: selectedFile.path});
@@ -62,7 +62,7 @@ const Main = () => {
         const bestQuality = checked
         if (isValidUrl()) {
             setLoading(true);
-            window.api.video({url: youtubeUrl, bestQuality: bestQuality});
+            window.api.video({url: url, bestQuality: bestQuality});
         } else if (selectedFile) {
             setLoading(true);
             window.api.video({file: selectedFile.path, bestQuality: bestQuality});
@@ -146,7 +146,7 @@ const Main = () => {
                     confirmButtonText: 'Ok',
                 });
                 setLoading(false);
-                setYoutubeUrl('');
+                setUrl('');
                 inputRef.current.value = null
                 setSelectedFile('');
 
@@ -187,12 +187,12 @@ const Main = () => {
                     >
                         <Form.Control
                             type="url"
-                            placeholder="https://someYoutubeUrl.com"
+                            placeholder="https://someurl.com"
                             name="url"
                             className="url-input"
                             required
-                            onChange={(e) => setYoutubeUrl(e.target.value)}
-                            value={youtubeUrl}
+                            onChange={(e) => setUrl(e.target.value)}
+                            value={url}
                         />
                     </Form.Group>
                     {loading ? (

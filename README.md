@@ -1,5 +1,5 @@
 # Youtube Downloader
-A simple cross platform youtube downloader for Mac, Windows, and Linux computers
+A simple cross platform youtube downloader for Mac, Windows, and Linux computers. This app also can download instagram videos with audio with no watermark.
 
 ![YoutubeDownloader](https://github.com/AnthonyGress/mac-the-ripper/assets/70029654/c473288f-d18c-4232-8e1c-3cc2a79a9011)
 
