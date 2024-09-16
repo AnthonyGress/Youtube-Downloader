@@ -19,11 +19,16 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import youtubedl from 'youtube-dl-exec';
 import { parseAndDownload } from './parseCSV';
+import { exec } from 'node:child_process';
+import util from 'node:util';
+import { checkForUpdates, startUpdate } from './utils/appUpdater';
 
 const isWin = process.platform === 'win32';
 let username: any;
 let downloadPath: string;
 let bulkFilepath: string;
+
+const execPromise = util.promisify(exec);
 
 if (isWin){
     username = process.env.USERNAME;
@@ -176,12 +181,23 @@ ipcMain.on('videoChannel', async (event, args) => {
 
 ipcMain.on('communicationChannel', async (event, args) => {
     console.log('hit coms');
-
     try {
         if (args.includes('restart')){
             event.reply('messageResponse', 'restarting');
             app.relaunch();
             app.exit();
+        }
+
+        if (args.includes('update')){
+            console.log('hit backend update');
+            event.reply('messageResponse', 'starting update');
+            startUpdate(event).then(() => {
+                if (process.platform !== 'win32') {
+                    event.reply('messageResponse', 'update complete');
+                } else {
+                    event.reply('messageResponse', 'win update downloaded');
+                }
+            });
         }
     } catch (error: any) {
         console.log(error);
@@ -249,7 +265,12 @@ const createWindow = async () => {
             mainWindow.minimize();
         } else {
             mainWindow.show();
-            mainWindow.webContents.send('startup', `Welcome to Youtube Downloader version ${app.getVersion()}`)
+            checkForUpdates().then((result) => {
+                const updateText = result ? '\n Update Available' : '';
+
+                mainWindow?.webContents.send('startup', `Welcome to Youtube Downloader version ${app.getVersion()}${updateText}`);
+
+            });
         }
     });
 

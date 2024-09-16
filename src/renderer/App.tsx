@@ -11,6 +11,7 @@ import packageJson from '../../release/app/package.json';
 import logo from '../../assets/icons/logo.png';
 import './App.css';
 import { Toggle } from './Toggle';
+import { UpdateBtn } from './UpdateBtn';
 
 declare global {
     interface Window {
@@ -24,6 +25,7 @@ const Main = () => {
     const [loading, setLoading] = useState(false);
     const [checked, setChecked] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>('');
+    const [updateAvailable, setUpdateAvailable] = useState(false);
 
     const inputRef = useRef<any>();
 
@@ -107,6 +109,10 @@ const Main = () => {
             setLoading(false);
         }
         if (event.source === window && typeof event.data === 'string') {
+            if (event.data.includes('Update Available')){
+                setUpdateAvailable(true);
+            }
+
             if (event.data.includes('starting update')){
                 Swal.fire({
                     customClass: {
@@ -133,6 +139,19 @@ const Main = () => {
                         window.api.coms('restart');
                     }
                 })
+            }
+
+
+            if (event.data.includes('win update downloaded')){
+                Swal.fire({
+                    customClass: {
+                        title: 'swal2-title',
+                    },
+                    title: 'Update Downloaded',
+                    text: 'Please run the installer by double clicking on it in your Downloads folder.',
+                    icon: 'success',
+                    confirmButtonText: 'Ok',
+                });
             }
 
             if (event.data === 'success') {
@@ -179,6 +198,7 @@ const Main = () => {
             <div className="center">
                 <h1 style={{fontSize: '1.75rem'}}>Youtube Downloader</h1>
             </div>
+            {updateAvailable && <UpdateBtn />}
             <div style={{ marginTop: '3rem' }}>
                 <Form onSubmit={e => {e.preventDefault(); downloadAudio();}}>
                     <Form.Group
