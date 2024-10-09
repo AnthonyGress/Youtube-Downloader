@@ -42,21 +42,21 @@ if (isWin){
         console.log(`stderr: ${stderr}`);
     })
 } else {
-    downloadPath = '~/Downloads/%(title)s.%(ext)s';
+    downloadPath = '~/Downloads/%(title)s-%(id)s.%(ext)s';
 }
 
 const setDownloadPath = (folderName?: string, bulk?: boolean) => {
     if (isWin) {
         if (bulk) {
-            downloadPath = `C:\\Users\\${username}\\Downloads\\${folderName}\\%(title)s.%(ext)s`;
+            downloadPath = `C:\\Users\\${username}\\Downloads\\${folderName}\\%(title)s-%(id)s.%(ext)s`;
         } else {
-            downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`;
+            downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s-%(id)s.%(ext)s`;
         }
     } else {
         if (bulk) {
-            downloadPath = `~/Downloads/${folderName}/%(title)s.%(ext)s`;
+            downloadPath = `~/Downloads/${folderName}/%(title)s-%(id)s.%(ext)s`;
         } else {
-            downloadPath = '~/Downloads/%(title)s.%(ext)s';
+            downloadPath = '~/Downloads/%(title)s-%(id)s.%(ext)s';
         }
     }
 }
