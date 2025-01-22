@@ -1,5 +1,5 @@
 {
-  "name": "mac-the-ripper",
+  "name": "youtube-downloader",
   "description": "Electron application boilerplate based on React, React Router, Webpack, React Fast Refresh for rapid application development",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
@@ -16,7 +16,7 @@
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest",
     "prepare": "husky install",
-    "release": "npm exec electron-builder -- --publish always --linux --x64 && npm exec electron-builder -- --publish always --win --mac --linux"
+    "release": "npm exec electron-builder -- --publish always --linux --x64 && npm exec electron-builder -- --publish always --win --x64 && npm exec electron-builder -- --publish always --mac --arm64 --linux --arm64"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -34,7 +34,7 @@
   },
   "build": {
     "productName": "Youtube Downloader",
-    "appId": "com.techx.mac-the-ripper",
+    "appId": "com.techx.youtube-downloader",
     "asar": false,
     "asarUnpack": [
       "**\\*.{node,dll}"
@@ -102,7 +102,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AnthonyGress/mac-the-ripper.git"
+    "url": "git+https://github.com/AnthonyGress/youtube-downloader.git"
   },
   "author": {
     "name": "Anthony Gress",
