@@ -110,9 +110,11 @@ const setDownloadPath = (folderName?: string, bulk?: boolean) => {
 
     if (isWin) {
         if (bulk) {
-            downloadPath = `${baseDirectory}\\${folderName}\\%(title)s-%(id)s.%(ext)s`;
+            // Windows: Use restricted filename template to avoid file system issues
+            downloadPath = `${baseDirectory}\\${folderName}\\%(title).100s-%(id)s.%(ext)s`;
         } else {
-            downloadPath = `${baseDirectory}\\%(title)s-%(id)s.%(ext)s`;
+            // Windows: Restrict filename length and sanitize for compatibility
+            downloadPath = `${baseDirectory}\\%(title).100s-%(id)s.%(ext)s`;
         }
     } else {
         if (bulk) {
@@ -149,6 +151,13 @@ const downloadAudio = async (url: string, bestQuality = false) => {
             preferFreeFormats: true,
             addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']
         };
+
+        // Windows-specific options for better file system compatibility
+        if (isWin) {
+            options.restrictFilenames = true; // Remove special characters from filenames
+            options.windowsFilenames = true; // Use Windows-compatible filenames
+            options.trimFilenames = 100; // Limit filename length to prevent path issues
+        }
 
         // Choose which youtube-dl-exec instance to use
         const youtubedlInstance = customYoutubedl || youtubedl;
@@ -257,6 +266,13 @@ const downloadVideo = async (url: string, bestQuality = false) => {
             preferFreeFormats: true,
             addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']
         };
+
+        // Windows-specific options for better file system compatibility
+        if (isWin) {
+            baseOptions.restrictFilenames = true; // Remove special characters from filenames
+            baseOptions.windowsFilenames = true; // Use Windows-compatible filenames
+            baseOptions.trimFilenames = 100; // Limit filename length to prevent path issues
+        }
 
         // Add FFmpeg path if available
         const effectiveFfmpegPath = symlinkFfmpegPath || ffmpegPath;
