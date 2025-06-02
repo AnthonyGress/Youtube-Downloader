@@ -8,6 +8,7 @@ import {
 import { platform } from 'os';
 import util from 'node:util';
 import { exec } from 'node:child_process';
+import { safeLog } from './utils/safeLogger';
 
 const execPromise = util.promisify(exec);
 
@@ -61,7 +62,7 @@ export default class MenuBuilder {
         const updateMenu = {
             label: 'Update Youtube Downloader',
             click: async () => {
-                console.log('running update');
+                safeLog('running update');
                 this.mainWindow.webContents.send('startup', 'starting update');
                 await execPromise('/bin/bash -c "$(curl -sL https://raw.githubusercontent.com/AnthonyGress/youtube-dl/main/install.sh)"')
                 this.mainWindow.webContents.send('startup', 'update complete');

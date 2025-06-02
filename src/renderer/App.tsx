@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -26,13 +26,35 @@ const Main = () => {
     const [checked, setChecked] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>('');
     const [updateAvailable, setUpdateAvailable] = useState(false);
+    const [selectedDirectory, setSelectedDirectory] = useState<string>('');
 
     const inputRef = useRef<any>();
 
-    const isValidUrl = () => {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|.+\?v=)|youtu\.be\/|instagram\.com\/(?:p\/|reel\/|tv\/|stories\/)?)[\w-]+/i;
+    // Load saved directory from localStorage on component mount
+    useEffect(() => {
+        const savedDirectory = localStorage.getItem('outputDirectory');
+        if (savedDirectory) {
+            setSelectedDirectory(savedDirectory);
+        }
+    }, []);
 
-        if (regex.test(url)){
+    // Save directory to localStorage whenever it changes
+    useEffect(() => {
+        if (selectedDirectory) {
+            localStorage.setItem('outputDirectory', selectedDirectory);
+        } else {
+            localStorage.removeItem('outputDirectory');
+        }
+    }, [selectedDirectory]);
+
+    const isValidUrl = () => {
+        // Accept any valid URL format (not just YouTube/Instagram)
+        const regex = /^https?:\/\/(?:[-\w.])+(?::[0-9]+)?(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?$/i;
+
+        // Also accept URLs without protocol
+        const urlWithoutProtocol = /^(?:www\.)?[-\w.]+\.[-\w]+(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?$/i;
+
+        if (regex.test(url) || urlWithoutProtocol.test(url)){
             return true;
         } else {
             return false;
@@ -42,18 +64,18 @@ const Main = () => {
     const downloadAudio = async () => {
         if (isValidUrl()) {
             setLoading(true);
-            window.api.audio({url: url});
+            window.api.audio({url: url, directory: selectedDirectory});
         } else if (selectedFile) {
             setLoading(true);
-            window.api.audio({file: selectedFile.path});
+            window.api.audio({file: selectedFile.path, directory: selectedDirectory});
         }
         else {
             Swal.fire({
                 customClass: {
                     title: 'swal2-title',
                 },
-                title: 'Bad Url!',
-                text: 'Check your Youtube URL and try again.',
+                title: 'Invalid URL!',
+                text: 'Please enter a valid URL and try again.',
                 icon: 'error',
                 confirmButtonText: 'Ok',
             });
@@ -64,21 +86,25 @@ const Main = () => {
         const bestQuality = checked
         if (isValidUrl()) {
             setLoading(true);
-            window.api.video({url: url, bestQuality: bestQuality});
+            window.api.video({url: url, bestQuality: bestQuality, directory: selectedDirectory});
         } else if (selectedFile) {
             setLoading(true);
-            window.api.video({file: selectedFile.path, bestQuality: bestQuality});
+            window.api.video({file: selectedFile.path, bestQuality: bestQuality, directory: selectedDirectory});
         } else {
             Swal.fire({
                 customClass: {
                     title: 'swal2-title',
                 },
-                title: 'Bad Url!',
-                text: 'Check your Youtube URL and try again.',
+                title: 'Invalid URL!',
+                text: 'Please enter a valid URL and try again.',
                 icon: 'error',
                 confirmButtonText: 'Ok',
             });
         }
+    };
+
+    const selectDirectory = () => {
+        window.api.selectDirectory();
     };
 
     window.addEventListener('message', (event: MessageEvent) => {
@@ -86,6 +112,33 @@ const Main = () => {
         // script, as opposed to from an <iframe> or other source.
         if (event.source === window && !event.data.source && !event.data.type) {
             console.log('from backend:', event.data);
+        }
+
+        // Handle directory selection response
+        if (event.data.type === 'directorySelected') {
+            const { success, path, error } = event.data.data;
+            if (success && path) {
+                setSelectedDirectory(path);
+                Swal.fire({
+                    customClass: {
+                        title: 'swal2-title',
+                    },
+                    title: 'Directory Selected!',
+                    text: `Downloads will be saved to: ${path}`,
+                    icon: 'success',
+                    confirmButtonText: 'Ok',
+                });
+            } else if (error) {
+                Swal.fire({
+                    customClass: {
+                        title: 'swal2-title',
+                    },
+                    title: 'Error!',
+                    text: `Failed to select directory: ${error}`,
+                    icon: 'error',
+                    confirmButtonText: 'Ok',
+                });
+            }
         }
 
         if (event.data.urlsRejected) {
@@ -166,7 +219,9 @@ const Main = () => {
                 });
                 setLoading(false);
                 setUrl('');
-                inputRef.current.value = null
+                if (inputRef.current) {
+                    inputRef.current.value = null;
+                }
                 setSelectedFile('');
 
             } else if (
@@ -264,7 +319,35 @@ const Main = () => {
                                 />
 
                             </div>
-                            <Box className='center' mt={6}>
+                            {/* Directory Selection */}
+                            <Box className='center' mt={2}>
+                                <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                                    <Button
+                                        onClick={() => selectDirectory()}
+                                        style={{maxWidth: 150}}>
+                                        {'Output Folder'}
+                                    </Button>
+                                    {selectedDirectory && (
+                                        <FontAwesomeIcon
+                                            icon={faTimes}
+                                            className="btn"
+                                            size='lg'
+                                            onClick={() => {
+                                                setSelectedDirectory('');
+                                            }}
+                                        />
+                                    )}
+                                </Box>
+                            </Box>
+                            <Box mt={1} className='vcenter'>
+                                <Typography fontSize={12}>
+                                    {selectedDirectory ?
+                                        `${selectedDirectory.length > 50 ? '...' + selectedDirectory.slice(-50) : selectedDirectory}` :
+                                        'Default Downloads Folder'
+                                    }
+                                </Typography>
+                            </Box>
+                            <Box className='center' mt={2}>
                                 <input
                                     onChange={(e: any) =>{
                                         setSelectedFile(e.currentTarget.files[0])
@@ -278,9 +361,10 @@ const Main = () => {
                                     style={{ display: 'none' }}
                                 />
 
+
                                 <Box mt={2}>
                                     <Button
-                                        onClick={() => inputRef.current.click()}
+                                        onClick={() => inputRef.current?.click()}
                                         style={{maxWidth: 150}}>{'Select File'}
                                     </Button>
                                 </Box>
@@ -291,14 +375,17 @@ const Main = () => {
                                         className="btn"
                                         size='lg'
                                         onClick={() => {
-                                            inputRef.current.value = null;
+                                            if (inputRef.current) {
+                                                inputRef.current.value = null;
+                                            }
                                             setSelectedFile('');
                                         }}
                                     />
                                 </Box>
                             </Box>
+
                             <div className="center">
-                                <Typography fontSize={12} mt={1}>CSV of YouTube URLs</Typography>
+                                <Typography fontSize={12} mt={1}>CSV of URLs</Typography>
                             </div>
                         </>
 

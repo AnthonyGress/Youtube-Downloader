@@ -5,6 +5,7 @@ const WINDOW_API = {
     audio: (args) => ipcRenderer.send('audioChannel', args),
     video: (args) => ipcRenderer.send('videoChannel', args),
     coms: (args) => ipcRenderer.send('communicationChannel', args),
+    selectDirectory: () => ipcRenderer.send('selectDirectory'),
 };
 
 const windowLoaded = new Promise((resolve) => {
@@ -26,6 +27,12 @@ ipcRenderer.on('messageResponse', async (event, arg) => {
     // We use regular window.postMessage to transfer the port from the isolated
     // world to the main world.
     window.postMessage(arg, '*');
+});
+
+// listens for directory selection response
+ipcRenderer.on('directorySelected', async (event, arg) => {
+    await windowLoaded;
+    window.postMessage({ type: 'directorySelected', data: arg }, '*');
 });
 
 // window.api

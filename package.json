@@ -8,6 +8,9 @@
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "lint-fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "download-binaries": "node scripts/download-binaries.js",
+    "build-static-ffmpeg": "node scripts/build-ffmpeg-static.js",
+    "prebuild": "npm run download-binaries",
     "package": "ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build --publish never",
     "package-all": "npm run package -- --win --x64 && npm run package -- --linux && npm run package -- --linux --x64 && npm run package",
     "postinstall": "ts-node .erb/scripts/check-native-dep.js && electron-builder install-app-deps && cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
@@ -47,7 +50,7 @@
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
       "target": {
-        "target": "default",
+        "target": "zip",
         "arch": [
           "arm64",
           "x64"
@@ -59,21 +62,6 @@
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false,
       "publish": "github"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ],
-      "writeUpdateInfo": false
     },
     "win": {
       "target": [
@@ -94,7 +82,14 @@
       "output": "release/build"
     },
     "extraResources": [
-      "./assets/**"
+      "./assets/**",
+      {
+        "from": "binaries/",
+        "to": "bin/",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "nsis": {
       "differentialPackage": false
@@ -240,11 +235,7 @@
     "regenerator-runtime": "^0.13.9",
     "sweetalert2": "^11.4.29",
     "semver": "^7.5.4",
-    "youtube-dl-exec": "2.4.5"
-  },
-  "devEngines": {
-    "node": ">=14.x",
-    "npm": ">=7.x"
+    "youtube-dl-exec": "3.0.22"
   },
   "browserslist": [],
   "prettier": {

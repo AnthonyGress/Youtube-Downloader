@@ -1,5 +1,6 @@
 import { parse } from 'csv-parse';
 import fs from 'fs';
+import { safeLog, safeError } from './utils/safeLogger';
 
 export const parseAndDownload = async (filepath: string, bestQuality: boolean, downloadAction: (url: string, bestQuality?: boolean) => any, callback: any) => {
     const records: string[] = [];
@@ -15,13 +16,13 @@ export const parseAndDownload = async (filepath: string, bestQuality: boolean, d
         let record;
         while ((record = parser.read()) !== null) {
             records.push(record[0]);
-            console.log(records.length);
+            safeLog(records.length);
 
         }
     });
 
     parser.on('end', () => {
-        console.log(records);
+        safeLog(records);
         const errorsArr: string[] = [];
 
         Promise.all(records.map(async (url) => {
@@ -40,7 +41,7 @@ export const parseAndDownload = async (filepath: string, bestQuality: boolean, d
             } else {
                 callback(true)
             }
-            console.log('done with all');
+            safeLog('done with all');
 
         })
 
@@ -49,8 +50,8 @@ export const parseAndDownload = async (filepath: string, bestQuality: boolean, d
 
     // Catch any error
     parser.on('error', (err) => {
-        console.log('csv parsing error');
-        console.error(err.message);
+        safeLog('csv parsing error');
+        safeError(err.message);
         callback(`error ${err.message}`)
 
     });

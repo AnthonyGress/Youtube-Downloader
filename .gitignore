@@ -29,3 +29,7 @@ npm-debug.log.*
 *.scss.d.ts
 .env
 package-lock.json
+
+# FFmpeg build directory
+ffmpeg-build
+binaries/*

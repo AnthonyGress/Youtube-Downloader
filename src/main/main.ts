@@ -12,51 +12,113 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import youtubedl from 'youtube-dl-exec';
 import { parseAndDownload } from './parseCSV';
-import { exec } from 'node:child_process';
-import util from 'node:util';
 import { checkForUpdates, startUpdate } from './utils/appUpdater';
+import { safeLog } from './utils/safeLogger';
+import { getBinaryPaths, checkBinaries } from './utils/binaryPaths';
+import fs from 'fs';
+import os from 'os';
+import { getLogInfo } from './utils/safeLogger';
 
 const isWin = process.platform === 'win32';
 let username: any;
 let downloadPath: string;
 let bulkFilepath: string;
+let customDownloadDirectory: string | null = null;
 
-const execPromise = util.promisify(exec);
+// Get binary paths for the current environment
+const { ffmpegPath, ytdlpPath } = getBinaryPaths();
+
+// Create symlinks without spaces to work around youtube-dl-exec path parsing issues
+let symlinkYtdlpPath: string | null = null;
+let symlinkFfmpegPath: string | null = null;
+
+// Create custom youtube-dl-exec instances with correct binary paths
+let customYoutubedl: any = null;
+
+const createBinarySymlinks = () => {
+    if (!app.isPackaged) return; // Only needed in packaged apps
+
+    try {
+        const tempDir = os.tmpdir();
+        const symlinkDir = path.join(tempDir, 'youtube-downloader-bins');
+
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(symlinkDir)) {
+            fs.mkdirSync(symlinkDir, { recursive: true });
+        }
+
+        // Create symlink for yt-dlp
+        if (ytdlpPath && fs.existsSync(ytdlpPath)) {
+            symlinkYtdlpPath = path.join(symlinkDir, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
+
+            // Remove existing symlink if it exists
+            if (fs.existsSync(symlinkYtdlpPath)) {
+                fs.unlinkSync(symlinkYtdlpPath);
+            }
+
+            fs.symlinkSync(ytdlpPath, symlinkYtdlpPath);
+            safeLog('Created yt-dlp symlink:', symlinkYtdlpPath, '->', ytdlpPath);
+
+            // Create custom youtube-dl-exec instance with symlinked binary
+            const { create: createYoutubeDl } = require('youtube-dl-exec');
+            customYoutubedl = createYoutubeDl(symlinkYtdlpPath);
+            safeLog('Created custom youtube-dl-exec instance with symlinked binary');
+        }
+
+        // Create symlink for ffmpeg
+        if (ffmpegPath && fs.existsSync(ffmpegPath)) {
+            symlinkFfmpegPath = path.join(symlinkDir, process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+
+            // Remove existing symlink if it exists
+            if (fs.existsSync(symlinkFfmpegPath)) {
+                fs.unlinkSync(symlinkFfmpegPath);
+            }
+
+            fs.symlinkSync(ffmpegPath, symlinkFfmpegPath);
+            safeLog('Created ffmpeg symlink:', symlinkFfmpegPath, '->', ffmpegPath);
+        }
+    } catch (error: any) {
+        safeLog('Failed to create binary symlinks:', error.message);
+        // Continue without symlinks - fall back to original paths
+    }
+};
 
 if (isWin){
     username = process.env.USERNAME;
     downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s.%(ext)s`;
 
     const { exec } = require('child_process');
-    console.log('windows setup');
+    safeLog('windows setup');
 
     exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
+        safeLog(`stdout: ${stdout}`);
+        safeLog(`stderr: ${stderr}`);
     })
 } else {
     downloadPath = '~/Downloads/%(title)s-%(id)s.%(ext)s';
 }
 
 const setDownloadPath = (folderName?: string, bulk?: boolean) => {
+    const baseDirectory = customDownloadDirectory || (isWin ? `C:\\Users\\${username}\\Downloads` : '~/Downloads');
+
     if (isWin) {
         if (bulk) {
-            downloadPath = `C:\\Users\\${username}\\Downloads\\${folderName}\\%(title)s-%(id)s.%(ext)s`;
+            downloadPath = `${baseDirectory}\\${folderName}\\%(title)s-%(id)s.%(ext)s`;
         } else {
-            downloadPath = `C:\\Users\\${username}\\Downloads\\%(title)s-%(id)s.%(ext)s`;
+            downloadPath = `${baseDirectory}\\%(title)s-%(id)s.%(ext)s`;
         }
     } else {
         if (bulk) {
-            downloadPath = `~/Downloads/${folderName}/%(title)s-%(id)s.%(ext)s`;
+            downloadPath = `${baseDirectory}/${folderName}/%(title)s-%(id)s.%(ext)s`;
         } else {
-            downloadPath = '~/Downloads/%(title)s-%(id)s.%(ext)s';
+            downloadPath = `${baseDirectory}/%(title)s-%(id)s.%(ext)s`;
         }
     }
 }
@@ -73,48 +135,262 @@ let mainWindow: BrowserWindow | null = null;
 
 const downloadAudio = async (url: string, bestQuality = false) => {
     try {
-        const res = await youtubedl(
-            url,
-            { format: 'bestaudio[ext=m4a]', output: downloadPath },
-        );
+        safeLog('=== AUDIO DOWNLOAD START ===');
+        safeLog('URL:', url);
+        safeLog('App packaged:', app.isPackaged);
+        safeLog('Platform:', process.platform);
+        safeLog('Download path:', downloadPath);
+        safeLog('Custom directory:', customDownloadDirectory);
+
+        const options: any = {
+            format: 'bestaudio[ext=m4a]',
+            output: downloadPath,
+            // Add additional options for production stability
+            preferFreeFormats: true,
+            addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']
+        };
+
+        // Choose which youtube-dl-exec instance to use
+        const youtubedlInstance = customYoutubedl || youtubedl;
+        safeLog('Using youtube-dl-exec instance:', customYoutubedl ? 'custom with symlinked binary' : 'default');
+
+        if (customYoutubedl) {
+            safeLog('Custom instance binary path:', symlinkYtdlpPath);
+        }
+
+        safeLog('Final options:', JSON.stringify(options, null, 2));
+
+        // Check if youtube-dl-exec module is working
+        safeLog('youtube-dl-exec instance type:', typeof youtubedlInstance);
+
+        // Add timeout
+        const timeoutMs = 300000; // 5 minutes
+        safeLog('Starting download with timeout:', timeoutMs + 'ms');
+
+        // Wrap youtube-dl-exec with more detailed error handling
+        let downloadPromise;
+        try {
+            downloadPromise = youtubedlInstance(url, options);
+        } catch (syncError: any) {
+            safeLog('Synchronous error from youtube-dl-exec:', {
+                message: syncError.message,
+                stack: syncError.stack,
+                name: syncError.name
+            });
+            throw syncError;
+        }
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Download timeout after 5 minutes')), timeoutMs);
+        });
+
+        const res = await Promise.race([downloadPromise, timeoutPromise]);
+        safeLog('Audio download completed successfully');
+        safeLog('=== AUDIO DOWNLOAD SUCCESS ===');
         return true;
     } catch (error: any) {
-        console.log(error);
-        return error.message;
+        safeLog('=== AUDIO DOWNLOAD ERROR ===');
+        safeLog('Error type:', typeof error);
+        safeLog('Error name:', error.name);
+        safeLog('Error message:', error.message);
+        safeLog('Error stack:', error.stack);
+
+        // Log all available error properties
+        const errorKeys = Object.keys(error);
+        safeLog('Available error properties:', errorKeys);
+
+        errorKeys.forEach(key => {
+            if (key !== 'stack') { // Already logged above
+                safeLog(`Error.${key}:`, error[key]);
+            }
+        });
+
+        if (error.stderr) {
+            safeLog('Error stderr:', error.stderr);
+        }
+        if (error.stdout) {
+            safeLog('Error stdout:', error.stdout);
+        }
+        if (error.command) {
+            safeLog('Failed command:', error.command);
+        }
+        if (error.spawnfile) {
+            safeLog('Spawn file:', error.spawnfile);
+        }
+        if (error.code) {
+            safeLog('Error code:', error.code);
+        }
+        if (error.errno) {
+            safeLog('Error errno:', error.errno);
+        }
+        if (error.syscall) {
+            safeLog('Error syscall:', error.syscall);
+        }
+
+        safeLog('Error details:', {
+            message: error.message,
+            url,
+            downloadPath,
+            ytdlpPath,
+            isPackaged: app.isPackaged
+        });
+        safeLog('=== AUDIO DOWNLOAD ERROR END ===');
+
+        return error.message || 'Unknown download error';
     }
 }
 
 const downloadVideo = async (url: string, bestQuality = false) => {
     try {
-        console.log(`################### best quality ${bestQuality}`);
+        safeLog('=== VIDEO DOWNLOAD START ===');
+        safeLog('URL:', url);
+        safeLog('Best quality:', bestQuality);
+        safeLog('App packaged:', app.isPackaged);
+        safeLog('Platform:', process.platform);
+        safeLog('Download path:', downloadPath);
+        safeLog('Custom directory:', customDownloadDirectory);
 
-        const goodFormat = { format: 'bv*[height<=1080][vcodec^=avc]+ba[ext=m4a]/best', output: downloadPath, mergeOutputFormat: 'mp4', ffmpegLocation: '/opt/homebrew/bin/ffmpeg'}
+        const baseOptions: any = {
+            output: downloadPath,
+            mergeOutputFormat: 'mp4',
+            // Add additional options for production stability
+            preferFreeFormats: true,
+            addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']
+        };
 
-        const bestFormat = { format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best', output: downloadPath, mergeOutputFormat: 'mp4', ffmpegLocation: '/opt/homebrew/bin/ffmpeg'}
+        // Add FFmpeg path if available
+        const effectiveFfmpegPath = symlinkFfmpegPath || ffmpegPath;
+        if (effectiveFfmpegPath && effectiveFfmpegPath !== 'ffmpeg') {
+            baseOptions.ffmpegLocation = effectiveFfmpegPath;
+            safeLog('Using ffmpeg path:', effectiveFfmpegPath);
+            safeLog('Original FFmpeg path:', ffmpegPath);
+            safeLog('Symlink FFmpeg path:', symlinkFfmpegPath);
 
-        const format = bestQuality ? bestFormat : goodFormat
+            // Verify the binary exists
+            const fs = require('fs');
+            if (fs.existsSync(effectiveFfmpegPath)) {
+                safeLog('FFmpeg binary verified at:', effectiveFfmpegPath);
+            } else {
+                safeLog('WARNING: FFmpeg binary not found at:', effectiveFfmpegPath);
+                delete baseOptions.ffmpegLocation; // Fall back to system
+            }
+        } else {
+            safeLog('Using system FFmpeg');
+        }
 
-        const res = await youtubedl(
-            url,
-            format
-        );
+        // Choose which youtube-dl-exec instance to use
+        const youtubedlInstance = customYoutubedl || youtubedl;
+        safeLog('Using youtube-dl-exec instance:', customYoutubedl ? 'custom with symlinked binary' : 'default');
 
+        if (customYoutubedl) {
+            safeLog('Custom instance binary path:', symlinkYtdlpPath);
+        }
+
+        const goodFormat = {
+            ...baseOptions,
+            format: 'bv*[height<=1080][vcodec^=avc]+ba[ext=m4a]/best'
+        };
+
+        const bestFormat = {
+            ...baseOptions,
+            format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best'
+        };
+
+        const format = bestQuality ? bestFormat : goodFormat;
+        safeLog('Final options:', JSON.stringify(format, null, 2));
+
+        // Check if youtube-dl-exec module is working
+        safeLog('youtube-dl-exec instance type:', typeof youtubedlInstance);
+
+        // Add timeout
+        const timeoutMs = 600000; // 10 minutes for video
+        safeLog('Starting download with timeout:', timeoutMs + 'ms');
+
+        // Wrap youtube-dl-exec with more detailed error handling
+        let downloadPromise;
+        try {
+            downloadPromise = youtubedlInstance(url, format);
+        } catch (syncError: any) {
+            safeLog('Synchronous error from youtube-dl-exec:', {
+                message: syncError.message,
+                stack: syncError.stack,
+                name: syncError.name
+            });
+            throw syncError;
+        }
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Download timeout after 10 minutes')), timeoutMs);
+        });
+
+        const res = await Promise.race([downloadPromise, timeoutPromise]);
+        safeLog('Video download completed successfully');
+        safeLog('=== VIDEO DOWNLOAD SUCCESS ===');
         return true;
     } catch (error: any) {
-        console.log(error);
-        return error.message;
+        safeLog('=== VIDEO DOWNLOAD ERROR ===');
+        safeLog('Error type:', typeof error);
+        safeLog('Error name:', error.name);
+        safeLog('Error message:', error.message);
+        safeLog('Error stack:', error.stack);
+
+        // Log all available error properties
+        const errorKeys = Object.keys(error);
+        safeLog('Available error properties:', errorKeys);
+
+        errorKeys.forEach(key => {
+            if (key !== 'stack') { // Already logged above
+                safeLog(`Error.${key}:`, error[key]);
+            }
+        });
+
+        if (error.stderr) {
+            safeLog('Error stderr:', error.stderr);
+        }
+        if (error.stdout) {
+            safeLog('Error stdout:', error.stdout);
+        }
+        if (error.command) {
+            safeLog('Failed command:', error.command);
+        }
+        if (error.spawnfile) {
+            safeLog('Spawn file:', error.spawnfile);
+        }
+        if (error.code) {
+            safeLog('Error code:', error.code);
+        }
+        if (error.errno) {
+            safeLog('Error errno:', error.errno);
+        }
+        if (error.syscall) {
+            safeLog('Error syscall:', error.syscall);
+        }
+
+        safeLog('Error details:', {
+            message: error.message,
+            url,
+            downloadPath,
+            ffmpegPath,
+            ytdlpPath,
+            bestQuality,
+            isPackaged: app.isPackaged
+        });
+        safeLog('=== VIDEO DOWNLOAD ERROR END ===');
+
+        return error.message || 'Unknown download error';
     }
 }
 
 // listen for message from renderer
 ipcMain.on('audioChannel', async (event, args) => {
     const url = args.url;
-    const bestQuality = false
-    console.log(args);
+    const bestQuality = false;
+    const directory = args.directory;
+    safeLog(args);
     let downloadResponse: any;
 
     const notifyComplete = (response: any) => {
-        console.log(response);
+        safeLog(response);
 
         if (response === true) {
             event.reply('messageResponse', 'success');
@@ -126,6 +402,11 @@ ipcMain.on('audioChannel', async (event, args) => {
                 event.reply('messageResponse', response);
             }
         }
+    }
+
+    // Set custom directory if provided
+    if (directory) {
+        customDownloadDirectory = directory;
     }
 
     if (url) {
@@ -146,12 +427,13 @@ ipcMain.on('audioChannel', async (event, args) => {
 
 ipcMain.on('videoChannel', async (event, args) => {
     const url = args.url;
-    const bestQuality = args.bestQuality
-    console.log('args', args);
+    const bestQuality = args.bestQuality;
+    const directory = args.directory;
+    safeLog('args', args);
     let downloadResponse: any;
 
     const notifyComplete = (response: any) => {
-        console.log(response);
+        safeLog(response);
 
         if (response === true) {
             event.reply('messageResponse', 'success');
@@ -163,6 +445,11 @@ ipcMain.on('videoChannel', async (event, args) => {
                 event.reply('messageResponse', response);
             }
         }
+    }
+
+    // Set custom directory if provided
+    if (directory) {
+        customDownloadDirectory = directory;
     }
 
     if (url) {
@@ -179,8 +466,27 @@ ipcMain.on('videoChannel', async (event, args) => {
     }
 });
 
+ipcMain.on('selectDirectory', async (event) => {
+    try {
+        const result = await dialog.showOpenDialog(mainWindow!, {
+            properties: ['openDirectory'],
+            title: 'Select Download Directory'
+        });
+
+        if (!result.canceled && result.filePaths.length > 0) {
+            customDownloadDirectory = result.filePaths[0];
+            event.reply('directorySelected', { success: true, path: customDownloadDirectory });
+        } else {
+            event.reply('directorySelected', { success: false, path: null });
+        }
+    } catch (error: any) {
+        safeLog('Directory selection error:', error);
+        event.reply('directorySelected', { success: false, error: error.message });
+    }
+});
+
 ipcMain.on('communicationChannel', async (event, args) => {
-    console.log('hit coms');
+    safeLog('hit coms');
     try {
         if (args.includes('restart')){
             event.reply('messageResponse', 'restarting');
@@ -189,7 +495,7 @@ ipcMain.on('communicationChannel', async (event, args) => {
         }
 
         if (args.includes('update')){
-            console.log('hit backend update');
+            safeLog('hit backend update');
             event.reply('messageResponse', 'starting update');
             startUpdate(event).then(() => {
                 if (process.platform !== 'win32') {
@@ -200,7 +506,7 @@ ipcMain.on('communicationChannel', async (event, args) => {
             });
         }
     } catch (error: any) {
-        console.log(error);
+        safeLog(error);
         event.reply('messageResponse', error.message);
     }
 });
@@ -231,6 +537,44 @@ if (isDevelopment) {
 // };
 
 const createWindow = async () => {
+    // Create binary symlinks first (before checking binaries)
+    createBinarySymlinks();
+
+    // Check if binaries are available
+    const binaryChecks = checkBinaries();
+    safeLog('=== YOUTUBE DOWNLOADER STARTUP ===');
+    safeLog('App version:', app.getVersion());
+    safeLog('Electron version:', process.versions.electron);
+    safeLog('Node version:', process.versions.node);
+    safeLog('Platform:', process.platform);
+    safeLog('Architecture:', process.arch);
+    safeLog('App packaged:', app.isPackaged);
+
+    // Log configuration information
+    const logInfo = getLogInfo();
+    safeLog('Log configuration:', logInfo);
+
+    if (app.isPackaged) {
+        safeLog('Log file location:', logInfo.logPath);
+        safeLog('Max log file size:', `${(logInfo.maxSize as number) / (1024 * 1024)}MB`);
+        safeLog('Log files are automatically rotated and old files are cleaned up');
+        safeLog('To view logs, navigate to the above path in your file manager');
+    }
+
+    safeLog('Binary availability check:', binaryChecks);
+    safeLog('Binary paths:', { ffmpegPath, ytdlpPath });
+    safeLog('Symlink paths:', { symlinkFfmpegPath, symlinkYtdlpPath });
+
+    if (!binaryChecks.ytdlp) {
+        safeLog('Warning: yt-dlp binary not found. Downloads may fail.');
+    }
+
+    if (!binaryChecks.ffmpeg) {
+        safeLog('Warning: FFmpeg binary not found. Video downloads may fail.');
+    }
+
+    safeLog('=== STARTUP COMPLETE ===');
+
     // if (isDevelopment) {
     //     await installExtensions();
     // }
@@ -282,9 +626,9 @@ const createWindow = async () => {
     menuBuilder.buildMenu();
 
     // Open urls in the user's browser
-    mainWindow.webContents.on('new-window', (event, url) => {
-        event.preventDefault();
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url);
+        return { action: 'deny' };
     });
 
     // Remove this if your app does not use auto updates
@@ -314,4 +658,4 @@ app
             if (mainWindow === null) createWindow();
         });
     })
-    .catch(console.log);
+    .catch(safeLog);
