@@ -43,46 +43,116 @@ let symlinkFfmpegPath: string | null = null;
 let customYoutubedl: any = null;
 
 const createBinarySymlinks = () => {
-    if (!app.isPackaged) return; // Only needed in packaged apps
+    // Create symlinks for both development and production to handle path issues
+    const needsSymlinks = process.platform === 'win32' || app.isPackaged;
+
+    safeLog('Symlink creation check:', {
+        platform: process.platform,
+        isPackaged: app.isPackaged,
+        needsSymlinks,
+        ytdlpPath,
+        ffmpegPath
+    });
+
+    if (!needsSymlinks) return;
 
     try {
         const tempDir = os.tmpdir();
         const symlinkDir = path.join(tempDir, 'youtube-downloader-bins');
 
+        safeLog('Symlink directory setup:', {
+            tempDir,
+            symlinkDir,
+            symlinkDirExists: fs.existsSync(symlinkDir)
+        });
+
         // Create directory if it doesn't exist
         if (!fs.existsSync(symlinkDir)) {
             fs.mkdirSync(symlinkDir, { recursive: true });
+            safeLog('Created symlink directory:', symlinkDir);
         }
 
         // Create symlink for yt-dlp
         if (ytdlpPath && fs.existsSync(ytdlpPath)) {
             symlinkYtdlpPath = path.join(symlinkDir, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
+            safeLog('Attempting to create yt-dlp symlink:', { from: ytdlpPath, to: symlinkYtdlpPath });
 
             // Remove existing symlink if it exists
             if (fs.existsSync(symlinkYtdlpPath)) {
-                fs.unlinkSync(symlinkYtdlpPath);
+                try {
+                    fs.unlinkSync(symlinkYtdlpPath);
+                    safeLog('Removed existing yt-dlp symlink');
+                } catch (unlinkError: any) {
+                    safeLog('Failed to remove existing yt-dlp symlink, continuing:', unlinkError.message);
+                }
             }
 
-            fs.symlinkSync(ytdlpPath, symlinkYtdlpPath);
-            safeLog('Created yt-dlp symlink:', symlinkYtdlpPath, '->', ytdlpPath);
+            try {
+                // On Windows, try regular symlink first (files don't need junction)
+                if (process.platform === 'win32') {
+                    fs.symlinkSync(ytdlpPath, symlinkYtdlpPath, 'file');
+                } else {
+                    fs.symlinkSync(ytdlpPath, symlinkYtdlpPath);
+                }
+                safeLog('Created yt-dlp symlink:', symlinkYtdlpPath, '->', ytdlpPath);
 
-            // Create custom youtube-dl-exec instance with symlinked binary
-            const { create: createYoutubeDl } = require('youtube-dl-exec');
-            customYoutubedl = createYoutubeDl(symlinkYtdlpPath);
-            safeLog('Created custom youtube-dl-exec instance with symlinked binary');
+                // Create custom youtube-dl-exec instance with symlinked binary
+                const { create: createYoutubeDl } = require('youtube-dl-exec');
+                customYoutubedl = createYoutubeDl(symlinkYtdlpPath);
+                safeLog('Created custom youtube-dl-exec instance with symlinked binary');
+            } catch (symlinkError: any) {
+                safeLog('Failed to create yt-dlp symlink:', symlinkError.message);
+                // Try copying the binary instead
+                try {
+                    fs.copyFileSync(ytdlpPath, symlinkYtdlpPath);
+                    safeLog('Created yt-dlp copy instead of symlink:', symlinkYtdlpPath);
+
+                    const { create: createYoutubeDl } = require('youtube-dl-exec');
+                    customYoutubedl = createYoutubeDl(symlinkYtdlpPath);
+                    safeLog('Created custom youtube-dl-exec instance with copied binary');
+                } catch (copyError: any) {
+                    safeLog('Failed to copy yt-dlp binary:', copyError.message);
+                }
+            }
+        } else {
+            safeLog('yt-dlp binary not found or invalid path:', { ytdlpPath, exists: ytdlpPath ? fs.existsSync(ytdlpPath) : false });
         }
 
         // Create symlink for ffmpeg
         if (ffmpegPath && fs.existsSync(ffmpegPath)) {
             symlinkFfmpegPath = path.join(symlinkDir, process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+            safeLog('Attempting to create ffmpeg symlink:', { from: ffmpegPath, to: symlinkFfmpegPath });
 
             // Remove existing symlink if it exists
             if (fs.existsSync(symlinkFfmpegPath)) {
-                fs.unlinkSync(symlinkFfmpegPath);
+                try {
+                    fs.unlinkSync(symlinkFfmpegPath);
+                    safeLog('Removed existing ffmpeg symlink');
+                } catch (unlinkError: any) {
+                    safeLog('Failed to remove existing ffmpeg symlink, continuing:', unlinkError.message);
+                }
             }
 
-            fs.symlinkSync(ffmpegPath, symlinkFfmpegPath);
-            safeLog('Created ffmpeg symlink:', symlinkFfmpegPath, '->', ffmpegPath);
+            try {
+                // On Windows, try regular symlink first (files don't need junction)
+                if (process.platform === 'win32') {
+                    fs.symlinkSync(ffmpegPath, symlinkFfmpegPath, 'file');
+                } else {
+                    fs.symlinkSync(ffmpegPath, symlinkFfmpegPath);
+                }
+                safeLog('Created ffmpeg symlink:', symlinkFfmpegPath, '->', ffmpegPath);
+            } catch (symlinkError: any) {
+                safeLog('Failed to create ffmpeg symlink:', symlinkError.message);
+                // Try copying the binary instead
+                try {
+                    fs.copyFileSync(ffmpegPath, symlinkFfmpegPath);
+                    safeLog('Created ffmpeg copy instead of symlink:', symlinkFfmpegPath);
+                } catch (copyError: any) {
+                    safeLog('Failed to copy ffmpeg binary:', copyError.message);
+                }
+            }
+        } else {
+            safeLog('ffmpeg binary not found or invalid path:', { ffmpegPath, exists: ffmpegPath ? fs.existsSync(ffmpegPath) : false });
         }
     } catch (error: any) {
         safeLog('Failed to create binary symlinks:', error.message);
