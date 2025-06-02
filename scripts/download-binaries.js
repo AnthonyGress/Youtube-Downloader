@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
+const zlib = require('zlib');
+const { pipeline } = require('stream');
 
 const binariesDir = path.join(__dirname, '..', 'binaries');
 
@@ -76,6 +78,63 @@ const buildStaticFFmpegMac = async () => {
     }
 };
 
+// Cross-platform file extraction
+const extractZip = async (zipPath, extractTo, targetFile) => {
+    const AdmZip = require('adm-zip');
+
+    try {
+        const zip = new AdmZip(zipPath);
+        const zipEntries = zip.getEntries();
+
+        // Find the target file in the zip
+        const targetEntry = zipEntries.find(entry =>
+            entry.entryName.endsWith(targetFile) &&
+            entry.entryName.includes('/bin/')
+        );
+
+        if (targetEntry) {
+            // Extract the specific file
+            const targetPath = path.join(extractTo, path.basename(targetFile));
+            zip.extractEntryTo(targetEntry, extractTo, false, true);
+
+            // Rename if necessary
+            const extractedPath = path.join(extractTo, targetEntry.entryName.split('/').pop());
+            if (extractedPath !== targetPath) {
+                fs.renameSync(extractedPath, targetPath);
+            }
+
+            console.log(`Extracted ${targetFile} to ${targetPath}`);
+            return targetPath;
+        } else {
+            throw new Error(`${targetFile} not found in zip archive`);
+        }
+    } catch (error) {
+        console.error(`Failed to extract ${targetFile}:`, error.message);
+        throw error;
+    } finally {
+        // Clean up zip file
+        try {
+            fs.unlinkSync(zipPath);
+        } catch (e) {
+            console.log('Note: Could not remove zip file:', e.message);
+        }
+    }
+};
+
+const extractTarXz = async (tarPath, extractTo, targetFile) => {
+    try {
+        // Use tar command for Linux/macOS
+        if (process.platform !== 'win32') {
+            execSync(`cd "${extractTo}" && tar -xf "${path.basename(tarPath)}" --strip-components=2 "*/bin/${targetFile}" && rm "${path.basename(tarPath)}"`, { stdio: 'inherit', cwd: extractTo });
+        } else {
+            throw new Error('tar.xz extraction not supported on Windows');
+        }
+    } catch (error) {
+        console.error(`Failed to extract ${targetFile} from tar.xz:`, error.message);
+        throw error;
+    }
+};
+
 const downloadBinariesForAllPlatforms = async () => {
     try {
         // Define all target platforms
@@ -135,7 +194,7 @@ const downloadBinariesForAllPlatforms = async () => {
 
                     // Extract ffmpeg.exe from the zip (force overwrite)
                     console.log('Extracting Windows FFmpeg...');
-                    execSync(`cd "${platformDir}" && unzip -o -j ffmpeg.zip "*/bin/ffmpeg.exe" && rm ffmpeg.zip`, { stdio: 'inherit' });
+                    await extractZip(zipPath, platformDir, 'ffmpeg.exe');
 
                 } else if (platform.name === 'darwin') {
                     // Build static FFmpeg for macOS (only if we're on macOS)
@@ -159,7 +218,7 @@ const downloadBinariesForAllPlatforms = async () => {
 
                     // Extract ffmpeg from the tar.xz
                     console.log('Extracting Linux FFmpeg...');
-                    execSync(`cd "${platformDir}" && tar -xf ffmpeg.tar.xz --strip-components=2 "*/bin/ffmpeg" && rm ffmpeg.tar.xz`, { stdio: 'inherit' });
+                    await extractTarXz(tarPath, platformDir, 'ffmpeg');
                 }
 
                 const ffmpegPath = path.join(platformDir, platform.ffmpegFile);
