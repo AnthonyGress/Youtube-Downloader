@@ -163,6 +163,7 @@
     "@types/react-test-renderer": "^17.0.1",
     "@types/webpack-env": "^1.16.3",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
+    "adm-zip": "^0.5.16",
     "browserslist-config-erb": "^0.0.3",
     "chalk": "^4.1.2",
     "concurrently": "^6.3.0",
@@ -233,8 +234,8 @@
     "react-loader-spinner": "^5.2.0",
     "react-router-dom": "^5.3.0",
     "regenerator-runtime": "^0.13.9",
-    "sweetalert2": "^11.4.29",
     "semver": "^7.5.4",
+    "sweetalert2": "^11.4.29",
     "youtube-dl-exec": "3.0.22"
   },
   "browserslist": [],
