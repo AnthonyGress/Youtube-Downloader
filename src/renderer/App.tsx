@@ -49,10 +49,11 @@ const Main = () => {
 
     const isValidUrl = () => {
         // Accept any valid URL format (not just YouTube/Instagram)
-        const regex = /^https?:\/\/(?:[-\w.])+(?::[0-9]+)?(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?$/i;
+        // Updated to allow more URL characters including dashes, underscores, and other valid characters
+        const regex = /^https?:\/\/(?:[-\w.~:/?#[\]@!$&'()*+,;=%])+(?::[0-9]+)?(?:\/(?:[-\w._~:/?#[\]@!$&'()*+,;=%])*(?:\?(?:[-\w._~:/?#[\]@!$&'()*+,;=%])*)?(?:#(?:[-\w._~:/?#[\]@!$&'()*+,;=%])*)?)?$/i;
 
-        // Also accept URLs without protocol
-        const urlWithoutProtocol = /^(?:www\.)?[-\w.]+\.[-\w]+(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?$/i;
+        // Also accept URLs without protocol - updated to allow more characters
+        const urlWithoutProtocol = /^(?:www\.)?[-\w._~]+\.[-\w._~]+(?:\/(?:[-\w._~:/?#[\]@!$&'()*+,;=%])*(?:\?(?:[-\w._~:/?#[\]@!$&'()*+,;=%])*)?(?:#(?:[-\w._~:/?#[\]@!$&'()*+,;=%])*)?)?$/i;
 
         if (regex.test(url) || urlWithoutProtocol.test(url)){
             return true;
