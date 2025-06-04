@@ -28,7 +28,6 @@ npm-debug.log.*
 *.sass.d.ts
 *.scss.d.ts
 .env
-package-lock.json
 
 # FFmpeg build directory
 ffmpeg-build
