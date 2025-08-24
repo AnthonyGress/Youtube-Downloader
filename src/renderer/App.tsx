@@ -267,7 +267,12 @@ const Main = () => {
                             name="url"
                             className="url-input"
                             required
-                            onChange={(e) => setUrl(e.target.value)}
+                            onChange={(e) => {
+                                const inputUrl = e.target.value;
+                                // Split off anything after and including &
+                                const cleanUrl = inputUrl.split('&')[0];
+                                setUrl(cleanUrl);
+                            }}
                             value={url}
                         />
                     </Form.Group>
