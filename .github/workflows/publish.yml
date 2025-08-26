@@ -20,8 +20,7 @@ jobs:
       - name: Install Node and NPM
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: npm
+          node-version: 20
 
       - name: Install dependencies
         run: |
