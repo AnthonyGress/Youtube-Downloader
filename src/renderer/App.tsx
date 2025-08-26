@@ -175,7 +175,8 @@ const Main = () => {
                     title: 'Updating',
                     text: 'The update is in progress, please wait...',
                     icon: 'info',
-                    confirmButtonText: 'Ok',
+                    showConfirmButton: false,
+                    allowOutsideClick: false
                 });
             }
 
