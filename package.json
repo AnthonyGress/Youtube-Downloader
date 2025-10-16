@@ -236,7 +236,7 @@
     "regenerator-runtime": "^0.13.9",
     "semver": "^7.5.4",
     "sweetalert2": "^11.4.29",
-    "youtube-dl-exec": "3.0.22"
+    "youtube-dl-exec": "3.0.26"
   },
   "browserslist": [],
   "prettier": {
