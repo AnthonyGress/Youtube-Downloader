@@ -79,7 +79,7 @@ const buildStaticFFmpegMac = async () => {
 };
 
 // Cross-platform file extraction
-const extractZip = async (zipPath, extractTo, targetFile) => {
+const extractZip = async (zipPath, extractTo, targetFile, requireBinPath = true) => {
     const AdmZip = require('adm-zip');
 
     try {
@@ -89,7 +89,7 @@ const extractZip = async (zipPath, extractTo, targetFile) => {
         // Find the target file in the zip
         const targetEntry = zipEntries.find(entry =>
             entry.entryName.endsWith(targetFile) &&
-            entry.entryName.includes('/bin/')
+            (!requireBinPath || entry.entryName.includes('/bin/'))
         );
 
         if (targetEntry) {
@@ -132,6 +132,86 @@ const extractTarXz = async (tarPath, extractTo, targetFile) => {
     } catch (error) {
         console.error(`Failed to extract ${targetFile} from tar.xz:`, error.message);
         throw error;
+    }
+};
+
+// Deno release asset names per platform/arch (denoland/deno latest)
+const DENO_BASE = 'https://github.com/denoland/deno/releases/latest/download';
+const DENO_ASSETS = {
+    win32: ['deno-x86_64-pc-windows-msvc.zip'],
+    linux: ['deno-x86_64-unknown-linux-gnu.zip'],
+    darwin: ['deno-aarch64-apple-darwin.zip', 'deno-x86_64-apple-darwin.zip']
+};
+
+// Download + extract a single deno zip, returning the path to the extracted binary
+const fetchDenoSlice = async (asset, platformDir, outName, targetPlatform) => {
+    const zipPath = path.join(platformDir, asset);
+    await downloadFile(`${DENO_BASE}/${asset}`, zipPath);
+    // The in-zip binary name depends on the TARGET platform, not the build host
+    const denoFile = targetPlatform === 'win32' ? 'deno.exe' : 'deno';
+    // deno binary sits at the zip root, not under /bin/
+    await extractZip(zipPath, platformDir, denoFile, false);
+    const extracted = path.join(platformDir, denoFile);
+    const finalPath = path.join(platformDir, outName);
+    if (extracted !== finalPath) {
+        fs.renameSync(extracted, finalPath);
+    }
+    return finalPath;
+};
+
+// Download deno JS runtime for all platforms (required by yt-dlp for YouTube JS challenges)
+const setupDeno = async () => {
+    console.log('\nSetting up deno JS runtime...');
+
+    for (const platformName of Object.keys(DENO_ASSETS)) {
+        console.log(`\nSetting up deno for ${platformName}...`);
+
+        const platformDir = path.join(binariesDir, platformName);
+        if (!fs.existsSync(platformDir)) {
+            fs.mkdirSync(platformDir, { recursive: true });
+        }
+
+        const denoOut = platformName === 'win32' ? 'deno.exe' : 'deno';
+        const denoPath = path.join(platformDir, denoOut);
+
+        try {
+            if (platformName === 'darwin') {
+                // macOS builds target both arm64 + x64; create a universal binary like ffmpeg/yt-dlp
+                const arm64Path = await fetchDenoSlice(DENO_ASSETS.darwin[0], platformDir, 'deno-arm64', 'darwin');
+                const x64Path = await fetchDenoSlice(DENO_ASSETS.darwin[1], platformDir, 'deno-x64', 'darwin');
+
+                if (currentPlatform === 'darwin') {
+                    try {
+                        execSync(`lipo -create "${arm64Path}" "${x64Path}" -output "${denoPath}"`, { stdio: 'inherit' });
+                        fs.unlinkSync(arm64Path);
+                        fs.unlinkSync(x64Path);
+                        console.log('Created universal deno binary');
+                    } catch (lipoError) {
+                        console.error('lipo failed, falling back to host-arch deno:', lipoError.message);
+                        const hostSlice = currentArch === 'arm64' ? arm64Path : x64Path;
+                        fs.renameSync(hostSlice, denoPath);
+                        const otherSlice = currentArch === 'arm64' ? x64Path : arm64Path;
+                        try { fs.unlinkSync(otherSlice); } catch (e) { /* ignore */ }
+                    }
+                } else {
+                    // Cross-platform build host: keep arm64 slice as the deno binary
+                    fs.renameSync(arm64Path, denoPath);
+                    try { fs.unlinkSync(x64Path); } catch (e) { /* ignore */ }
+                }
+            } else {
+                await fetchDenoSlice(DENO_ASSETS[platformName][0], platformDir, denoOut, platformName);
+            }
+
+            if (fs.existsSync(denoPath)) {
+                makeExecutable(denoPath);
+                console.log(`deno ready for ${platformName}`);
+            } else {
+                console.log(`deno not found for ${platformName} after extraction`);
+            }
+        } catch (error) {
+            console.error(`Failed to setup deno for ${platformName}:`, error.message);
+            console.log(`${platformName} downloads may fail without a JS runtime`);
+        }
     }
 };
 
@@ -234,6 +314,9 @@ const downloadBinariesForAllPlatforms = async () => {
                 console.log(`${platform.name} will fall back to system FFmpeg if available`);
             }
         }
+
+        // Download deno JS runtime (required by yt-dlp for YouTube)
+        await setupDeno();
 
         console.log('\nBinary setup completed!');
 

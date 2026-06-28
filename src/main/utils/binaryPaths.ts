@@ -16,6 +16,9 @@ export const getBinaryPaths = () => {
 
     let ffmpegPath: string;
     let ytdlpPath: string;
+    // deno JS runtime required by yt-dlp for YouTube extraction; null if not bundled
+    let denoPath: string | null = null;
+    const denoFile = platform === 'win32' ? 'deno.exe' : 'deno';
 
     if (isPackaged) {
         // In packaged app, binaries should be in resources/bin/platform/
@@ -32,6 +35,9 @@ export const getBinaryPaths = () => {
             ffmpegPath = path.join(resourcesPath, 'bin', 'linux', 'ffmpeg');
             ytdlpPath = path.join(resourcesPath, 'bin', 'linux', 'yt-dlp');
         }
+
+        const packagedDenoPath = path.join(resourcesPath, 'bin', platform, denoFile);
+        denoPath = fs.existsSync(packagedDenoPath) ? packagedDenoPath : null;
     } else {
         // In development, look for downloaded binaries first, then fall back to system
         // More robust project root calculation
@@ -44,6 +50,13 @@ export const getBinaryPaths = () => {
 
         debugLog('Calculated project root:', projectRoot);
         debugLog('Binaries directory:', binariesDir);
+
+        const devDenoPath = path.join(binariesDir, platform, denoFile);
+        try {
+            denoPath = fs.existsSync(devDenoPath) ? devDenoPath : null;
+        } catch {
+            denoPath = null;
+        }
 
         try {
             debugLog('Binaries directory exists:', fs.existsSync(binariesDir));
@@ -145,22 +158,24 @@ export const getBinaryPaths = () => {
         }
     }
 
-    debugLog('Final binary paths:', { ffmpegPath, ytdlpPath, platform, isPackaged });
+    debugLog('Final binary paths:', { ffmpegPath, ytdlpPath, denoPath, platform, isPackaged });
 
     return {
         ffmpegPath,
         ytdlpPath,
+        denoPath,
         isPackaged
     };
 };
 
 // Check if required binaries exist
 export const checkBinaries = () => {
-    const { ffmpegPath, ytdlpPath, isPackaged } = getBinaryPaths();
+    const { ffmpegPath, ytdlpPath, denoPath } = getBinaryPaths();
 
     const checks = {
         ffmpeg: false,
-        ytdlp: false
+        ytdlp: false,
+        deno: false
     };
 
     try {
@@ -189,6 +204,14 @@ export const checkBinaries = () => {
         } else {
             // Just a command name, assume it's in PATH (for fallback cases)
             checks.ytdlp = true;
+        }
+
+        // deno is optional (diagnostic only) — missing must not block startup
+        try {
+            checks.deno = !!denoPath && fs.existsSync(denoPath);
+        } catch (error) {
+            debugLog('Error checking deno path:', error);
+            checks.deno = false;
         }
 
         debugLog('Binary existence checks:', checks);

@@ -17,7 +17,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import youtubedl from 'youtube-dl-exec';
+import { spawn } from 'child_process';
 import { parseAndDownload } from './parseCSV';
 import { checkForUpdates, startUpdate } from './utils/appUpdater';
 import { safeLog } from './utils/safeLogger';
@@ -33,14 +33,95 @@ let bulkFilepath: string;
 let customDownloadDirectory: string | null = null;
 
 // Get binary paths for the current environment
-const { ffmpegPath, ytdlpPath } = getBinaryPaths();
+const { ffmpegPath, ytdlpPath, denoPath } = getBinaryPaths();
 
-// Create symlinks without spaces to work around youtube-dl-exec path parsing issues
+// Create symlinks without spaces to work around path parsing issues with spaces
 let symlinkYtdlpPath: string | null = null;
 let symlinkFfmpegPath: string | null = null;
+let symlinkDenoPath: string | null = null;
 
-// Create custom youtube-dl-exec instances with correct binary paths
-let customYoutubedl: any = null;
+// Build yt-dlp CLI args from an options object.
+// Mirrors dargs({ useEquals: false }): camelCase -> --kebab-case, booleans become
+// flags (true -> --flag, false -> --no-flag), arrays repeat the flag per value.
+const buildYtdlpArgs = (options: Record<string, any>): string[] => {
+    const args: string[] = [];
+
+    const pushArg = (key: string, value?: string) => {
+        const flag = '--' + key.replace(/[A-Z]/g, '-$&').toLowerCase();
+        args.push(flag);
+        if (value) args.push(value);
+    };
+
+    for (const [key, value] of Object.entries(options)) {
+        if (value === undefined || value === null) continue;
+
+        if (value === true) {
+            pushArg(key);
+        } else if (value === false) {
+            args.push('--no-' + key.replace(/[A-Z]/g, '-$&').toLowerCase());
+        } else if (typeof value === 'string') {
+            pushArg(key, value);
+        } else if (typeof value === 'number' && !Number.isNaN(value)) {
+            pushArg(key, String(value));
+        } else if (Array.isArray(value)) {
+            for (const item of value) pushArg(key, String(item));
+        }
+    }
+
+    return args;
+};
+
+// Run yt-dlp with the given options and a timeout. Resolves on exit code 0,
+// rejects with an error carrying stderr/stdout/exitCode otherwise.
+const runYtdlp = (
+    binaryPath: string,
+    url: string,
+    options: Record<string, any>,
+    timeoutMs: number
+): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const args = [url, ...buildYtdlpArgs(options)];
+        safeLog('Spawning yt-dlp:', binaryPath, args.join(' '));
+
+        const child = spawn(binaryPath, args, { windowsHide: true });
+
+        let stdout = '';
+        let stderr = '';
+        let finished = false;
+
+        const timer = setTimeout(() => {
+            if (finished) return;
+            finished = true;
+            child.kill('SIGKILL');
+            reject(new Error(`Download timeout after ${timeoutMs}ms`));
+        }, timeoutMs);
+
+        child.stdout.on('data', (d) => { stdout += d.toString(); });
+        child.stderr.on('data', (d) => { stderr += d.toString(); });
+
+        child.on('error', (err: any) => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            reject(Object.assign(err, { stderr, stdout }));
+        });
+
+        child.on('close', (code) => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            if (code === 0) {
+                resolve(stdout);
+            } else {
+                reject(Object.assign(new Error(stderr || `yt-dlp exited with code ${code}`), {
+                    stderr,
+                    stdout,
+                    exitCode: code
+                }));
+            }
+        });
+    });
+};
 
 const createBinarySymlinks = () => {
     // Create symlinks for both development and production to handle path issues
@@ -95,23 +176,15 @@ const createBinarySymlinks = () => {
                     fs.symlinkSync(ytdlpPath, symlinkYtdlpPath);
                 }
                 safeLog('Created yt-dlp symlink:', symlinkYtdlpPath, '->', ytdlpPath);
-
-                // Create custom youtube-dl-exec instance with symlinked binary
-                const { create: createYoutubeDl } = require('youtube-dl-exec');
-                customYoutubedl = createYoutubeDl(symlinkYtdlpPath);
-                safeLog('Created custom youtube-dl-exec instance with symlinked binary');
             } catch (symlinkError: any) {
                 safeLog('Failed to create yt-dlp symlink:', symlinkError.message);
                 // Try copying the binary instead
                 try {
                     fs.copyFileSync(ytdlpPath, symlinkYtdlpPath);
                     safeLog('Created yt-dlp copy instead of symlink:', symlinkYtdlpPath);
-
-                    const { create: createYoutubeDl } = require('youtube-dl-exec');
-                    customYoutubedl = createYoutubeDl(symlinkYtdlpPath);
-                    safeLog('Created custom youtube-dl-exec instance with copied binary');
                 } catch (copyError: any) {
                     safeLog('Failed to copy yt-dlp binary:', copyError.message);
+                    symlinkYtdlpPath = null;
                 }
             }
         } else {
@@ -154,6 +227,43 @@ const createBinarySymlinks = () => {
         } else {
             safeLog('ffmpeg binary not found or invalid path:', { ffmpegPath, exists: ffmpegPath ? fs.existsSync(ffmpegPath) : false });
         }
+
+        // Create symlink for deno (JS runtime for yt-dlp)
+        if (denoPath && fs.existsSync(denoPath)) {
+            symlinkDenoPath = path.join(symlinkDir, process.platform === 'win32' ? 'deno.exe' : 'deno');
+            safeLog('Attempting to create deno symlink:', { from: denoPath, to: symlinkDenoPath });
+
+            // Remove existing symlink if it exists
+            if (fs.existsSync(symlinkDenoPath)) {
+                try {
+                    fs.unlinkSync(symlinkDenoPath);
+                    safeLog('Removed existing deno symlink');
+                } catch (unlinkError: any) {
+                    safeLog('Failed to remove existing deno symlink, continuing:', unlinkError.message);
+                }
+            }
+
+            try {
+                if (process.platform === 'win32') {
+                    fs.symlinkSync(denoPath, symlinkDenoPath, 'file');
+                } else {
+                    fs.symlinkSync(denoPath, symlinkDenoPath);
+                }
+                safeLog('Created deno symlink:', symlinkDenoPath, '->', denoPath);
+            } catch (symlinkError: any) {
+                safeLog('Failed to create deno symlink:', symlinkError.message);
+                // Try copying the binary instead
+                try {
+                    fs.copyFileSync(denoPath, symlinkDenoPath);
+                    safeLog('Created deno copy instead of symlink:', symlinkDenoPath);
+                } catch (copyError: any) {
+                    safeLog('Failed to copy deno binary:', copyError.message);
+                    symlinkDenoPath = null;
+                }
+            }
+        } else {
+            safeLog('deno binary not found or invalid path:', { denoPath, exists: denoPath ? fs.existsSync(denoPath) : false });
+        }
     } catch (error: any) {
         safeLog('Failed to create binary symlinks:', error.message);
         // Continue without symlinks - fall back to original paths
@@ -167,7 +277,7 @@ if (isWin){
     const { exec } = require('child_process');
     safeLog('windows setup');
 
-    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin\\yt-dlp.exe`, (err: string, stdout: string, stderr: string) => {
+    exec(`mkdir C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o C:\\Users\\${username}\\AppData\\Local\\Programs\\youtube-downloader\\resources\\app\\dist\\bin\\yt-dlp.exe`, (_err: string, stdout: string, stderr: string) => {
         safeLog(`stdout: ${stdout}`);
         safeLog(`stderr: ${stderr}`);
     })
@@ -205,7 +315,7 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-const downloadAudio = async (url: string, bestQuality = false) => {
+const downloadAudio = async (url: string, _bestQuality = false) => {
     try {
         safeLog('=== AUDIO DOWNLOAD START ===');
         safeLog('URL:', url);
@@ -215,12 +325,27 @@ const downloadAudio = async (url: string, bestQuality = false) => {
         safeLog('Custom directory:', customDownloadDirectory);
 
         const options: any = {
-            format: 'bestaudio[ext=m4a]',
+            // Prefer m4a/aac audio: the bundled static ffmpeg only decodes aac/mp3/h264
+            // (no opus/webm), so avoid yt-dlp's default opus/webm bestaudio
+            format: 'bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/bestaudio/best',
             output: downloadPath,
+            extractAudio: true,
+            audioFormat: 'm4a',
+            audioQuality: 0,
+            ffmpegLocation: symlinkFfmpegPath || ffmpegPath,
             // Add additional options for production stability
             preferFreeFormats: true,
+            noCheckCertificates: true,
+            noUpdate: true,
             addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']
         };
+
+        // Provide deno as the JS runtime yt-dlp needs to solve YouTube JS challenges
+        const effectiveDenoPath = symlinkDenoPath || denoPath;
+        if (effectiveDenoPath) {
+            options.jsRuntimes = `deno:${effectiveDenoPath}`;
+            safeLog('Using deno JS runtime:', effectiveDenoPath);
+        }
 
         // Windows-specific options for better file system compatibility
         if (isWin) {
@@ -229,41 +354,14 @@ const downloadAudio = async (url: string, bestQuality = false) => {
             options.trimFilenames = 100; // Limit filename length to prevent path issues
         }
 
-        // Choose which youtube-dl-exec instance to use
-        const youtubedlInstance = customYoutubedl || youtubedl;
-        safeLog('Using youtube-dl-exec instance:', customYoutubedl ? 'custom with symlinked binary' : 'default');
-
-        if (customYoutubedl) {
-            safeLog('Custom instance binary path:', symlinkYtdlpPath);
-        }
-
+        const effectiveYtdlpPath = symlinkYtdlpPath || ytdlpPath;
+        safeLog('Using yt-dlp binary:', effectiveYtdlpPath);
         safeLog('Final options:', JSON.stringify(options, null, 2));
 
-        // Check if youtube-dl-exec module is working
-        safeLog('youtube-dl-exec instance type:', typeof youtubedlInstance);
-
-        // Add timeout
         const timeoutMs = 300000; // 5 minutes
         safeLog('Starting download with timeout:', timeoutMs + 'ms');
 
-        // Wrap youtube-dl-exec with more detailed error handling
-        let downloadPromise;
-        try {
-            downloadPromise = youtubedlInstance(url, options);
-        } catch (syncError: any) {
-            safeLog('Synchronous error from youtube-dl-exec:', {
-                message: syncError.message,
-                stack: syncError.stack,
-                name: syncError.name
-            });
-            throw syncError;
-        }
-
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Download timeout after 5 minutes')), timeoutMs);
-        });
-
-        const res = await Promise.race([downloadPromise, timeoutPromise]);
+        await runYtdlp(effectiveYtdlpPath, url, options, timeoutMs);
         safeLog('Audio download completed successfully');
         safeLog('=== AUDIO DOWNLOAD SUCCESS ===');
         return true;
@@ -332,8 +430,8 @@ const downloadVideo = async (url: string, bestQuality = false) => {
         const baseOptions: any = {
             output: downloadPath,
             mergeOutputFormat: 'mp4',
-            // Add additional options for production stability
-            preferFreeFormats: true,
+            // NOTE: do NOT set preferFreeFormats here — it biases yt-dlp toward
+            // AV1/VP9, which QuickTime can't play. We want H.264 (avc1) + AAC.
             addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']
         };
 
@@ -364,52 +462,39 @@ const downloadVideo = async (url: string, bestQuality = false) => {
             safeLog('Using system FFmpeg');
         }
 
-        // Choose which youtube-dl-exec instance to use
-        const youtubedlInstance = customYoutubedl || youtubedl;
-        safeLog('Using youtube-dl-exec instance:', customYoutubedl ? 'custom with symlinked binary' : 'default');
-
-        if (customYoutubedl) {
-            safeLog('Custom instance binary path:', symlinkYtdlpPath);
+        // Provide deno as the JS runtime yt-dlp needs to solve YouTube JS challenges
+        const effectiveDenoPath = symlinkDenoPath || denoPath;
+        if (effectiveDenoPath) {
+            baseOptions.jsRuntimes = `deno:${effectiveDenoPath}`;
+            safeLog('Using deno JS runtime:', effectiveDenoPath);
         }
 
+        const effectiveYtdlpPath = symlinkYtdlpPath || ytdlpPath;
+        safeLog('Using yt-dlp binary:', effectiveYtdlpPath);
+
+        // Prefer H.264 (avc1) video + m4a/aac audio so the result plays in
+        // QuickTime. Fall back to any mp4, then anything, if avc1 is unavailable.
         const goodFormat = {
             ...baseOptions,
-            format: 'bv*[height<=1080][vcodec^=avc]+ba[ext=m4a]/best'
+            format: 'bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best',
+            noCheckCertificates: true,
+            noUpdate: true
         };
 
         const bestFormat = {
             ...baseOptions,
-            format: 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best'
+            format: 'bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            noCheckCertificates: true,
+            noUpdate: true
         };
 
         const format = bestQuality ? bestFormat : goodFormat;
         safeLog('Final options:', JSON.stringify(format, null, 2));
 
-        // Check if youtube-dl-exec module is working
-        safeLog('youtube-dl-exec instance type:', typeof youtubedlInstance);
-
-        // Add timeout
         const timeoutMs = 600000; // 10 minutes for video
         safeLog('Starting download with timeout:', timeoutMs + 'ms');
 
-        // Wrap youtube-dl-exec with more detailed error handling
-        let downloadPromise;
-        try {
-            downloadPromise = youtubedlInstance(url, format);
-        } catch (syncError: any) {
-            safeLog('Synchronous error from youtube-dl-exec:', {
-                message: syncError.message,
-                stack: syncError.stack,
-                name: syncError.name
-            });
-            throw syncError;
-        }
-
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Download timeout after 10 minutes')), timeoutMs);
-        });
-
-        const res = await Promise.race([downloadPromise, timeoutPromise]);
+        await runYtdlp(effectiveYtdlpPath, url, format, timeoutMs);
         safeLog('Video download completed successfully');
         safeLog('=== VIDEO DOWNLOAD SUCCESS ===');
         return true;
