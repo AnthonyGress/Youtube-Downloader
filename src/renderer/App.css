@@ -178,6 +178,52 @@ h1, button, div {
     width: 100%;
 }
 
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.settings-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        200.96deg,
+        #fedc2a -29.09%,
+        #dd5789 51.77%,
+        #7a2c9e 129.35%
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 32px 40px;
+    z-index: 10;
+    box-sizing: border-box;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.settings-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.settings-item button {
+    margin-left: 0;
+}
+
 .splash {
     display: flex;
     flex-direction: column;

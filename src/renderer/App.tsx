@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom';
-import { Form, Button } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleInfo, faRefresh, faTimes } from '@fortawesome/free-solid-svg-icons';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Bars } from 'react-loader-spinner';
-import { Box, FormControlLabel, Typography } from '@mui/material';
+import { Box, Button, FormControlLabel, TextField, Typography, styled } from '@mui/material';
 import Swal from 'sweetalert2';
 import packageJson from '../../release/app/package.json';
 
@@ -19,9 +20,42 @@ declare global {
     }
 }
 
+const PillButton = styled(Button)({
+    backgroundColor: 'white',
+    color: 'black',
+    padding: '10px 20px',
+    borderRadius: 10,
+    textTransform: 'none',
+    fontFamily: 'sans-serif',
+    fontSize: '1rem',
+    boxShadow: '0px 8px 28px -6px rgba(24, 39, 75, 0.12), 0px 18px 88px -4px rgba(24, 39, 75, 0.14)',
+    transition: 'all ease-in 0.1s',
+    opacity: 0.9,
+    '&:hover': {
+        backgroundColor: 'white',
+        transform: 'scale(1.02)',
+        opacity: 1,
+    },
+});
+
+const UrlInput = styled(TextField)({
+    minWidth: 320,
+    '& .MuiInputBase-root': {
+        height: '2rem',
+        borderRadius: 8,
+        backgroundColor: 'white',
+        color: 'black',
+        fontSize: '1rem',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+        border: 'none',
+    },
+});
+
 const Main = () => {
     const [url, setUrl] = useState('');
     const [showInfoPage, setShowInfoPage] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [loading, setLoading] = useState(false);
     const [checked, setChecked] = useState(false);
     const [selectedFile, setSelectedFile] = useState<any>('');
@@ -257,16 +291,23 @@ const Main = () => {
             </div>
             {updateAvailable && <UpdateBtn />}
             <div style={{ marginTop: '3rem' }}>
-                <Form onSubmit={e => {e.preventDefault(); downloadAudio();}}>
-                    <Form.Group
-                        className="mb-3 center"
-                        controlId="formBasicName"
+                <Box
+                    component="form"
+                    onSubmit={e => {e.preventDefault(); downloadAudio();}}
+                >
+                    <Box
+                        sx={{
+                            width: 400,
+                            maxWidth: '90vw',
+                            mx: 'auto',
+                            mb: 3,
+                        }}
                     >
-                        <Form.Control
+                        <UrlInput
+                            fullWidth
                             type="url"
                             placeholder="https://someurl.com"
                             name="url"
-                            className="url-input"
                             required
                             onChange={(e) => {
                                 const inputUrl = e.target.value;
@@ -276,7 +317,7 @@ const Main = () => {
                             }}
                             value={url}
                         />
-                    </Form.Group>
+                    </Box>
                     {loading ? (
 
                         <div className="center bars">
@@ -297,107 +338,34 @@ const Main = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="button-group">
-                                <Button
-                                    size="lg"
-                                    className="w-75 dl-btn"
+                            <Box
+                                className="button-group"
+                                sx={{
+                                    width: 400,
+                                    maxWidth: '90vw',
+                                    mx: 'auto',
+                                    gap: 2,
+                                }}
+                            >
+                                <PillButton
+                                    size="large"
+                                    sx={{ flex: 1, fontSize: '0.85rem', whiteSpace: 'nowrap' }}
                                     onClick={() => downloadAudio()}
                                 >
                                 Download Audio
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    className="w-75 dl-btn"
+                                </PillButton>
+                                <PillButton
+                                    size="large"
+                                    sx={{ flex: 1, fontSize: '0.85rem', whiteSpace: 'nowrap' }}
                                     onClick={() => downloadVideo()}
                                 >
                                 Download Video
-                                </Button>
-                            </div>
-                            <div className="center">
-                                <FormControlLabel
-                                    control={ <Toggle
-                                        checked={checked}
-                                        onChange={() => setChecked(!checked)}
-                                        inputProps={{ 'aria-label': 'controlled' }}
-                                        sx={{ m: 1 }}
-                                    />
-                                    }
-                                    label='Best Quality'
-                                />
-
-                            </div>
-                            {/* Directory Selection */}
-                            <Box className='center' mt={2}>
-                                <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-                                    <Button
-                                        onClick={() => selectDirectory()}
-                                        style={{maxWidth: 150}}>
-                                        {'Output Folder'}
-                                    </Button>
-                                    {selectedDirectory && (
-                                        <FontAwesomeIcon
-                                            icon={faTimes}
-                                            className="btn"
-                                            size='lg'
-                                            onClick={() => {
-                                                setSelectedDirectory('');
-                                            }}
-                                        />
-                                    )}
-                                </Box>
+                                </PillButton>
                             </Box>
-                            <Box mt={1} className='vcenter'>
-                                <Typography fontSize={12}>
-                                    {selectedDirectory ?
-                                        `${selectedDirectory.length > 50 ? '...' + selectedDirectory.slice(-50) : selectedDirectory}` :
-                                        'Default Downloads Folder'
-                                    }
-                                </Typography>
-                            </Box>
-                            <Box className='center' mt={2}>
-                                <input
-                                    onChange={(e: any) =>{
-                                        setSelectedFile(e.currentTarget.files[0])
-                                    }}
-                                    type="file"
-                                    id="files"
-                                    name="files"
-                                    className="form-control"
-                                    accept='.csv'
-                                    ref={inputRef}
-                                    style={{ display: 'none' }}
-                                />
-
-
-                                <Box mt={2}>
-                                    <Button
-                                        onClick={() => inputRef.current?.click()}
-                                        style={{maxWidth: 150}}>{'Select File'}
-                                    </Button>
-                                </Box>
-                                <Box mt={2}>{selectedFile ? `${selectedFile.name}` : 'No File Selected'}</Box>
-                                <Box mt={2} ml={2}>
-                                    <FontAwesomeIcon
-                                        icon={faTimes}
-                                        className="btn"
-                                        size='lg'
-                                        onClick={() => {
-                                            if (inputRef.current) {
-                                                inputRef.current.value = null;
-                                            }
-                                            setSelectedFile('');
-                                        }}
-                                    />
-                                </Box>
-                            </Box>
-
-                            <div className="center">
-                                <Typography fontSize={12} mt={1}>CSV of URLs</Typography>
-                            </div>
                         </>
 
                     )}
-                </Form>
+                </Box>
             </div>
             {/* <div className="terminal-wrapper center">
                 <div className="output-terminal">
@@ -410,6 +378,86 @@ const Main = () => {
                 </div>
             </div>
         */}
+
+            {showSettings ? (
+                <div className="settings-page">
+                    <div className="settings-header">
+                        <Typography fontSize={22} fontWeight={600}>Settings</Typography>
+                        <CloseIcon
+                            className="btn"
+                            onClick={() => setShowSettings(false)}
+                        />
+                    </div>
+
+                    <div className="settings-item">
+                        <FormControlLabel
+                            control={ <Toggle
+                                checked={checked}
+                                onChange={() => setChecked(!checked)}
+                                inputProps={{ 'aria-label': 'controlled' }}
+                                sx={{ m: 1 }}
+                            />
+                            }
+                            label='Best Quality'
+                        />
+                    </div>
+
+                    <div className="settings-item">
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <PillButton
+                                onClick={() => selectDirectory()}
+                                sx={{ maxWidth: 150 }}>
+                                {'Output Folder'}
+                            </PillButton>
+                            {selectedDirectory && (
+                                <CloseIcon
+                                    className="btn"
+                                    onClick={() => setSelectedDirectory('')}
+                                />
+                            )}
+                        </Box>
+                        <Typography fontSize={12} mt={1}>
+                            {selectedDirectory ?
+                                `${selectedDirectory.length > 50 ? '...' + selectedDirectory.slice(-50) : selectedDirectory}` :
+                                'Default Downloads Folder'
+                            }
+                        </Typography>
+                    </div>
+
+                    <div className="settings-item">
+                        <input
+                            onChange={(e: any) => setSelectedFile(e.currentTarget.files[0])}
+                            type="file"
+                            id="files"
+                            name="files"
+                            className="form-control"
+                            accept='.csv'
+                            ref={inputRef}
+                            style={{ display: 'none' }}
+                        />
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <PillButton
+                                onClick={() => inputRef.current?.click()}
+                                sx={{ maxWidth: 150 }}>{'Upload CSV'}
+                            </PillButton>
+                            {selectedFile && (
+                                <CloseIcon
+                                    className="btn"
+                                    onClick={() => {
+                                        if (inputRef.current) {
+                                            inputRef.current.value = null;
+                                        }
+                                        setSelectedFile('');
+                                    }}
+                                />
+                            )}
+                        </Box>
+                        <Typography fontSize={12} mt={1}>
+                            {selectedFile ? `${selectedFile.name}` : 'CSV of URLs — No File Selected'}
+                        </Typography>
+                    </div>
+                </div>
+            ) : null}
 
             {showInfoPage ? (
                 <div id="info-page">
@@ -434,15 +482,21 @@ const Main = () => {
                 </div>
             ) : null}
             <div className="footer-btns">
-                <FontAwesomeIcon
-                    icon={faCircleInfo}
-                    className="btn"
-                    onClick={() => {
-                        setShowInfoPage(!showInfoPage);
-                    }}
-                />
-                <FontAwesomeIcon
-                    icon={faRefresh}
+                <div className="footer-left">
+                    <InfoOutlinedIcon
+                        className="btn"
+                        onClick={() => {
+                            setShowInfoPage(!showInfoPage);
+                        }}
+                    />
+                    <MoreVertIcon
+                        className="btn"
+                        onClick={() => {
+                            setShowSettings(!showSettings);
+                        }}
+                    />
+                </div>
+                <RefreshIcon
                     className="btn"
                     onClick={() => {
                         location.reload();

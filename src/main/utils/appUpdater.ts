@@ -2,7 +2,7 @@
 // import { autoUpdater } from 'electron-updater';
 import { IpcMainEvent } from 'electron';
 import { spawn } from 'node:child_process';
-import { Octokit } from 'octokit';
+import axios from 'axios';
 import { downloadFile } from './downloadFile';
 import packageJson from '../../../release/app/package.json';
 import semverCompare from 'semver/functions/compare';
@@ -21,15 +21,15 @@ import { execPromise } from './executeCmd';
 
 export const checkForUpdates = async () => {
     let updateAvailable = false;
-    const octokit = new Octokit();
 
-    const res = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
-        owner: 'AnthonyGress',
-        repo: 'Youtube-Downloader',
-        headers: {
-            'X-GitHub-Api-Version': '2022-11-28'
+    const res = await axios.get(
+        'https://api.github.com/repos/AnthonyGress/Youtube-Downloader/releases/latest',
+        {
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
         }
-    });
+    );
 
     const latestVersion = res.data.name;
     const runningVersion = packageJson.version;
