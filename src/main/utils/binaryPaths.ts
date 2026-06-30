@@ -9,6 +9,21 @@ const debugLog = (message: string, data?: any) => {
     }
 };
 
+export const getHomebrewPythonPath = (): string | null => {
+    const candidates = [
+        '/opt/homebrew/bin/python3',
+        '/usr/local/bin/python3'
+    ];
+
+    return candidates.find(candidate => {
+        try {
+            return fs.existsSync(candidate);
+        } catch {
+            return false;
+        }
+    }) || null;
+};
+
 // Get the correct binary paths for both development and production
 export const getBinaryPaths = () => {
     const isPackaged = app.isPackaged;

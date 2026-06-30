@@ -21,7 +21,7 @@ import { spawn } from 'child_process';
 import { parseAndDownload } from './parseCSV';
 import { checkForUpdates, startUpdate } from './utils/appUpdater';
 import { safeLog } from './utils/safeLogger';
-import { getBinaryPaths, checkBinaries } from './utils/binaryPaths';
+import { getBinaryPaths, checkBinaries, getHomebrewPythonPath } from './utils/binaryPaths';
 import fs from 'fs';
 import os from 'os';
 import { getLogInfo } from './utils/safeLogger';
@@ -81,9 +81,24 @@ const runYtdlp = (
 ): Promise<string> => {
     return new Promise((resolve, reject) => {
         const args = [url, ...buildYtdlpArgs(options)];
-        safeLog('Spawning yt-dlp:', binaryPath, args.join(' '));
+        let command = binaryPath;
+        let commandArgs = args;
 
-        const child = spawn(binaryPath, args, { windowsHide: true });
+        if (process.platform === 'darwin' && path.isAbsolute(binaryPath)) {
+            const pythonPath = getHomebrewPythonPath();
+            if (!pythonPath) {
+                reject(new Error(
+                    'Homebrew Python 3.10 or newer is required. Install it with "brew install python".'
+                ));
+                return;
+            }
+
+            command = pythonPath;
+            commandArgs = [binaryPath, ...args];
+        }
+
+        safeLog('Spawning yt-dlp:', command, commandArgs.join(' '));
+        const child = spawn(command, commandArgs, { windowsHide: true });
 
         let stdout = '';
         let stderr = '';
