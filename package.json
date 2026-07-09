@@ -11,8 +11,9 @@
     "download-binaries": "node scripts/download-binaries.js",
     "build-static-ffmpeg": "node scripts/build-ffmpeg-static.js",
     "prebuild": "npm run download-binaries",
-    "package": "ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build --publish never",
-    "package-all": "npm run package -- --win --x64 && npm run package -- --linux && npm run package -- --linux --x64 && npm run package",
+    "package:prepare": "ts-node ./.erb/scripts/clean.js dist && npm run build",
+    "package": "npm run package:prepare && electron-builder build --publish never",
+    "package-all": "npm run package:prepare && electron-builder build --publish never --win --x64 && electron-builder build --publish never --linux && electron-builder build --publish never --linux --x64 && electron-builder build --publish never",
     "postinstall": "ts-node .erb/scripts/check-native-dep.js && electron-builder install-app-deps && cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
     "dev": "ts-node ./.erb/scripts/check-port-in-use.js && npm run start:renderer",
     "start:main": "cross-env NODE_ENV=development electron .erb/scripts/dev-main.js",
@@ -61,20 +62,41 @@
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false,
-      "publish": "github"
+      "publish": "github",
+      "extraResources": [
+        "./assets/**",
+        {
+          "from": "binaries/darwin",
+          "to": "bin/darwin"
+        }
+      ]
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "publish": "github"
+      "publish": "github",
+      "extraResources": [
+        "./assets/**",
+        {
+          "from": "binaries/win32",
+          "to": "bin/win32"
+        }
+      ]
     },
     "linux": {
       "target": [
         "AppImage"
       ],
       "category": "Development",
-      "publish": "github"
+      "publish": "github",
+      "extraResources": [
+        "./assets/**",
+        {
+          "from": "binaries/linux",
+          "to": "bin/linux"
+        }
+      ]
     },
     "directories": {
       "app": "release/app",
@@ -82,14 +104,7 @@
       "output": "release/build"
     },
     "extraResources": [
-      "./assets/**",
-      {
-        "from": "binaries/",
-        "to": "bin/",
-        "filter": [
-          "**/*"
-        ]
-      }
+      "./assets/**"
     ],
     "nsis": {
       "differentialPackage": false
