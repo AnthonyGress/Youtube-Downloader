@@ -138,6 +138,33 @@ const runYtdlp = (
     });
 };
 
+// Helper to clean up partial download files in a directory
+const cleanupPartialFiles = (downloadPathPattern: string): number => {
+    try {
+        const dir = path.dirname(downloadPathPattern);
+        if (!fs.existsSync(dir)) return 0;
+
+        const files = fs.readdirSync(dir);
+        const partFiles = files.filter(f => f.endsWith('.part') || f.endsWith('.part-Frag'));
+
+        let cleaned = 0;
+        for (const file of partFiles) {
+            const fullPath = path.join(dir, file);
+            try {
+                fs.unlinkSync(fullPath);
+                safeLog('Cleaned up partial file:', fullPath);
+                cleaned++;
+            } catch (err: any) {
+                safeLog('Failed to delete partial file:', fullPath, err.message);
+            }
+        }
+        return cleaned;
+    } catch (err: any) {
+        safeLog('Error scanning for partial files:', err.message);
+        return 0;
+    }
+};
+
 const createBinarySymlinks = () => {
     // Create symlinks for both development and production to handle path issues
     const needsSymlinks = process.platform === 'win32' || app.isPackaged;
@@ -376,7 +403,24 @@ const downloadAudio = async (url: string, _bestQuality = false) => {
         const timeoutMs = 300000; // 5 minutes
         safeLog('Starting download with timeout:', timeoutMs + 'ms');
 
-        await runYtdlp(effectiveYtdlpPath, url, options, timeoutMs);
+        // Try download with automatic retry on 403 errors (stale resume URLs)
+        try {
+            await runYtdlp(effectiveYtdlpPath, url, options, timeoutMs);
+        } catch (firstError: any) {
+            // Check if it's a 403 error during resume attempt
+            if (firstError.message?.includes('HTTP Error 403') || firstError.stderr?.includes('HTTP Error 403')) {
+                safeLog('Detected 403 error - likely stale resume URL. Cleaning up partial files and retrying...');
+                const cleaned = cleanupPartialFiles(downloadPath);
+                safeLog(`Cleaned ${cleaned} partial file(s), retrying download from scratch`);
+
+                // Retry with --no-continue to force fresh download
+                const retryOptions = { ...options, noContinue: true };
+                await runYtdlp(effectiveYtdlpPath, url, retryOptions, timeoutMs);
+            } else {
+                throw firstError;
+            }
+        }
+
         safeLog('Audio download completed successfully');
         safeLog('=== AUDIO DOWNLOAD SUCCESS ===');
         return true;
@@ -509,7 +553,24 @@ const downloadVideo = async (url: string, bestQuality = false) => {
         const timeoutMs = 600000; // 10 minutes for video
         safeLog('Starting download with timeout:', timeoutMs + 'ms');
 
-        await runYtdlp(effectiveYtdlpPath, url, format, timeoutMs);
+        // Try download with automatic retry on 403 errors (stale resume URLs)
+        try {
+            await runYtdlp(effectiveYtdlpPath, url, format, timeoutMs);
+        } catch (firstError: any) {
+            // Check if it's a 403 error during resume attempt
+            if (firstError.message?.includes('HTTP Error 403') || firstError.stderr?.includes('HTTP Error 403')) {
+                safeLog('Detected 403 error - likely stale resume URL. Cleaning up partial files and retrying...');
+                const cleaned = cleanupPartialFiles(downloadPath);
+                safeLog(`Cleaned ${cleaned} partial file(s), retrying download from scratch`);
+
+                // Retry with --no-continue to force fresh download
+                const retryFormat = { ...format, noContinue: true };
+                await runYtdlp(effectiveYtdlpPath, url, retryFormat, timeoutMs);
+            } else {
+                throw firstError;
+            }
+        }
+
         safeLog('Video download completed successfully');
         safeLog('=== VIDEO DOWNLOAD SUCCESS ===');
         return true;
